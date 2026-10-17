@@ -882,99 +882,59 @@ async function generateAIQuizWithGemini(
   difficulty = 'Medium',
   count = 8
 ) {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-
   const systemPrompt = `You are an expert Moroccan trivia host creating a fast-paced 1v1 competitive quiz in authentic Moroccan Darija (الدارجة المغربية).
-Write all questions ("q") and all 4 multiple-choice options ("options") in clear, natural Moroccan Darija using Arabic script.
-CRITICAL FOR ACCURATE PHOTOS:
-For EVERY question, you MUST provide "wikiTitle": the exact English Wikipedia article title of the visual subject of the question (for example: "Chefchaouen", "Yassine_Bounou", "Tajine", "Hassan_II_Mosque", "Lionel_Messi", "Eiffel_Tower", "Mars", "Naruto").
-Choose questions about famous people, places, monuments, animals, foods, movies, anime, or objects that definitely have a real photograph on English Wikipedia!
-Also return:
-- "a": integer 0 to 3 indicating the correct option index.
-- "imageCaption": short caption in Moroccan Darija describing the visual hint without spoiling the exact answer.
-- "imageEmoji": a single relevant emoji for the question.`;
+Return ONLY a valid JSON object with a "questions" array containing exactly ${count} items.
+Each item MUST have:
+- "q": question in Moroccan Darija (Arabic script)
+- "options": array of 4 choices in Moroccan Darija
+- "a": integer 0 to 3 (correct answer index)
+- "wikiTitle": exact English Wikipedia article title for the subject photo (e.g. "Hassan Tower", "Achraf Hakimi", "Tajine", "Lionel Messi")
+- "imageCaption": short caption in Moroccan Darija
+- "imageEmoji": single emoji`;
 
-  const userQuery = `صاوب ليا كويز تنافسي فيه ${count} ديال الأسئلة بالدارجة المغربية على موضوع: "${topic}" بمستوى صعوبة "${difficulty}". اختار أسئلة عندها صور حقيقية معروفة فـ Wikipedia وعطيني wikiTitle دقيق بالإنجليزية لكل سؤال.`;
+  const userQuery = `صاوب ليا كويز تنافسي فيه ${count} ديال الأسئلة بالدارجة المغربية على موضوع "${topic}" بمستوى صعوبة "${difficulty}". جاوب بـ JSON فقط.`;
 
-  const payload = {
-    contents: [{ parts: [{ text: userQuery }] }],
-    systemInstruction: { parts: [{ text: systemPrompt }] },
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: 'ARRAY',
-        items: {
-          type: 'OBJECT',
-          properties: {
-            q: { type: 'STRING' },
-            options: {
-              type: 'ARRAY',
-              items: { type: 'STRING' },
-            },
-            a: { type: 'INTEGER' },
-            wikiTitle: { type: 'STRING' },
-            imageCaption: { type: 'STRING' },
-            imageEmoji: { type: 'STRING' },
-          },
-          required: [
-            'q',
-            'options',
-            'a',
-            'wikiTitle',
-            'imageCaption',
-            'imageEmoji',
-          ],
-          propertyOrdering: [
-            'q',
-            'options',
-            'a',
-            'wikiTitle',
-            'imageCaption',
-            'imageEmoji',
-          ],
-        },
-      },
-    },
-  };
+  const response = await fetch('https://text.pollinations.ai/openai', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'openai',
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userQuery }
+      ]
+    })
+  });
 
-  let delay = 1000;
-  for (let attempt = 0; attempt < 4; attempt++) {
-    try {
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) {
-        const parsed = JSON.parse(text);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const enriched = await Promise.all(
-            parsed.map(async (item) => {
-              const exactPhoto = await fetchExactSubjectImageFromWikipedia(
-                item.wikiTitle || topic
-              );
-              return {
-                q: item.q,
-                options: Array.isArray(item.options)
-                  ? item.options.slice(0, 4)
-                  : ['A', 'B', 'C', 'D'],
-                a:
-                  typeof item.a === 'number' && item.a >= 0 && item.a <= 3
-                    ? item.a
-                    : 0,
-                wikiTitle: item.wikiTitle || topic,
-                imageKeyword: item.wikiTitle || topic,
-                imageCaption: item.imageCaption || topic,
-                imageEmoji: item.imageEmoji || '✨',
-                imageUrl: exactPhoto || '',
-              };
-            })
-          );
-          return enriched;
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const data = await response.json();
+  const rawText = data?.choices?.[0]?.message?.content || '{}';
+  const cleaned = rawText.replace(/```json|```/g, '').trim();
+  const parsed = JSON.parse(cleaned);
+  const questions = Array.isArray(parsed) ? parsed : parsed.questions;
+
+  if (!Array.isArray(questions) || questions.length === 0) {
+    throw new Error('Invalid questions array');
+  }
+
+  const enriched = await Promise.all(
+    questions.slice(0, count).map(async (item) => {
+      const wikiImg = await fetchWikipediaThumbnail(item.wikiTitle || topic);
+      return {
+        q: item.q,
+        options: Array.isArray(item.options) ? item.options.slice(0, 4) : ['1', '2', '3', '4'],
+        a: typeof item.a === 'number' ? item.a : 0,
+        wikiTitle: item.wikiTitle || topic,
+        imageUrl: wikiImg || 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Flag_of_Morocco.svg/640px-Flag_of_Morocco.svg.png',
+        imageCaption: item.imageCaption || `سؤال على ${topic}`,
+        imageEmoji: item.imageEmoji || '🧠'
+      };
+    })
+  );
+
+  return enriched;
+}
         }
       }
     } catch (e) {
