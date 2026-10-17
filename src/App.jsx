@@ -27,7 +27,7 @@ import {
   Send,
   Settings,
   Image as ImageIcon,
-  Download,
+  KeyRound,
 } from 'lucide-react';
 
 const AVATAR_OPTIONS = [
@@ -872,94 +872,217 @@ function QuestionPictureBanner({ question, roundNumber }) {
   );
 }
 
+// ============================================================================
+// 🔑 قراءة الـ API Key من جميع المصادر (Vite / Next / CRA / LocalStorage)
+// ============================================================================
+function resolveGeminiApiKey(customKey = '') {
+  if (customKey && customKey.trim()) return customKey.trim();
+
+  // 1) LocalStorage (إلى دخلو المستخدم من الواجهة مباشرة)
+  if (typeof window !== 'undefined') {
+    const saved = window.localStorage.getItem('QB_GEMINI_API_KEY');
+    if (saved && saved.trim()) return saved.trim();
+  }
+
+  // 2) Vite Static Replacement (مهم بزاف يتكتب هكا بلا typeof import.meta باش Vite يعوضو وقت الـ Build)
+  try {
+    if (import.meta.env.VITE_GEMINI_API_KEY) {
+      return import.meta.env.VITE_GEMINI_API_KEY.trim();
+    }
+  } catch (e) {}
+
+  try {
+    if (import.meta.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+      return import.meta.env.NEXT_PUBLIC_GEMINI_API_KEY.trim();
+    }
+  } catch (e) {}
+
+  // 3) Create React App / Next.js process.env
+  try {
+    if (typeof process !== 'undefined' && process.env) {
+      const envKey =
+        process.env.VITE_GEMINI_API_KEY ||
+        process.env.REACT_APP_GEMINI_API_KEY ||
+        process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
+        process.env.GEMINI_API_KEY;
+      if (envKey) return envKey.trim();
+    }
+  } catch (e) {}
+
+  return '';
+}
+
+// ============================================================================
+// ✨ توليد الكويز بـ Gemini مع JSON Mode و Multi-Model Fallback
+// ============================================================================
 async function generateAIQuizWithGemini(
   topic,
   difficulty = 'Medium',
-  count = 8
+  count = 8,
+  customKey = ''
 ) {
   const cleanTopic = topic.trim();
-  const apiKey = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || '';
+  const apiKey = resolveGeminiApiKey(customKey);
 
-  const systemPrompt = `You are an expert Moroccan trivia host. Create exactly ${count} multiple-choice questions in Moroccan Darija (الدارجة المغربية) about the topic "${cleanTopic}" (Difficulty: ${difficulty}).
-Return ONLY a valid JSON array of objects with no markdown formatting:
+  if (!apiKey) {
+    const noKeyErr = new Error('MISSING_API_KEY');
+    noKeyErr.code = 'MISSING_API_KEY';
+    throw noKeyErr;
+  }
+
+  const systemPrompt = `أنت منشط مسابقات ثقافية مغربي محترف. صاوب بالضبط ${count} ديال الأسئلة متعددة الاختيارات (QCM) بالدارجة المغربية الواضحة والممتعة حول موضوع: "${cleanTopic}" (مستوى الصعوبة: ${difficulty}).
+
+قواعد صارمة:
+1. كل سؤال خاص يكون حقيقي، دقيق علمياً وتاريخياً، وعندو علاقة مباشرة بـ "${cleanTopic}".
+2. كل سؤال عندو 4 ديال الاختيارات فـ "options".
+3. خاص تحط الجواب الصحيح فـ موقع عشوائي (0 أو 1 أو 2 أو 3) وتكتب الرقم ديالو الصحيح فـ الحقل "a".
+4. فـ الحقل "wikiTitle" كتب اسم الشيء أو الشخصية أو المكان المذكور فالسؤال بالإنجليزية (English Wikipedia article title) باش نجبدو الصورة الحقيقية ديالو من ويكيبيديا (مثلاً: "Real Madrid CF", "Lionel Messi", "Chefchaouen", "Naruto").
+5. رجع JSON Array فقط على هاد الشكل بالضبط:
 [
   {
-    "q": "سؤال بالدارجة حول ${cleanTopic}؟",
-    "options": ["الجواب الصحيح", "خطأ 1", "خطأ 2", "خطأ 3"],
-    "a": 0,
-    "wikiTitle": "${cleanTopic}",
-    "imageCaption": "تلميح حول ${cleanTopic}",
-    "imageEmoji": "🧠"
+    "q": "نص السؤال بالدارجة المغربية؟",
+    "options": ["اختيار 1", "اختيار 2", "اختيار 3", "اختيار 4"],
+    "a": 2,
+    "wikiTitle": "Exact English Wikipedia Title",
+    "imageCaption": "وصف قصير للصورة بالدارجة",
+    "imageEmoji": "🎯"
   }
 ]`;
 
-  let questions = null;
+  // نجربو أحسن الموديلات بالترتيب باش إلى شي واحد كان عليه ضغط يدوز للثاني أوتوماتيكياً
+  const modelsToTry = [
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+  ];
 
-  if (apiKey) {
+  let parsedQuestions = null;
+  let lastApiError = null;
+
+  for (const modelName of modelsToTry) {
     try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(
+        apiKey
+      )}`;
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: systemPrompt }] }]
-        })
+          contents: [{ parts: [{ text: systemPrompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            responseMimeType: 'application/json',
+          },
+        }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        const txt = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        const match = txt.match(/\[[\s\S]*\]/);
-        if (match) {
-          const parsed = JSON.parse(match[0]);
-          if (Array.isArray(parsed) && parsed.length > 0) questions = parsed;
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        lastApiError =
+          data?.error?.message || `HTTP Error ${res.status} (${modelName})`;
+        // إذا كان المفتاح غالط حبّس مباشرة بلا ما تجرب الموديلات لخرين
+        if (
+          res.status === 400 &&
+          lastApiError.toLowerCase().includes('api key')
+        ) {
+          throw new Error('INVALID_API_KEY: ' + lastApiError);
+        }
+        continue;
+      }
+
+      const rawText =
+        data?.candidates?.[0]?.content?.parts
+          ?.map((p) => p.text || '')
+          .join('\n') || '';
+
+      if (!rawText) continue;
+
+      // تنظيف أي علامات Markdown احتياطياً
+      const cleanedJson = rawText
+        .replace(/```json/gi, '')
+        .replace(/```/g, '')
+        .trim();
+
+      let parsed = null;
+      try {
+        parsed = JSON.parse(cleanedJson);
+      } catch (jsonErr) {
+        const bracketMatch = cleanedJson.match(/\[[\s\S]*\]/);
+        if (bracketMatch) {
+          parsed = JSON.parse(bracketMatch[0]);
         }
       }
-    } catch (e) {}
+
+      if (
+        parsed &&
+        !Array.isArray(parsed) &&
+        Array.isArray(parsed.questions)
+      ) {
+        parsed = parsed.questions;
+      }
+
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        parsedQuestions = parsed;
+        break;
+      }
+    } catch (err) {
+      lastApiError = err.message || String(err);
+      if (lastApiError.includes('INVALID_API_KEY')) {
+        throw err;
+      }
+    }
   }
 
-  // Fallback ذكي وديناميكي حسب أي موضوع كتبتي إذا ما كانش API Key مفعل مؤقتاً
-  if (!questions || !Array.isArray(questions) || questions.length === 0) {
-    questions = Array.from({ length: count }, (_, i) => {
-      const variants = [
-        { q: `شنو هو الأساس أو المعيار الأهم في موضوع "${cleanTopic}"؟`, options: [`الاحترافية والجودة في ${cleanTopic}`, `العشوائية المطلقة`, `التسرع بدون تخطيط`, `الانسحاب المبكر`], a: 0 },
-        { q: `فـ مجال "${cleanTopic}"، شكون يعتبر من أبرز الرواد أو العناصر الأساسية؟`, options: [`الخبراء والمحترفون في ${cleanTopic}`, `المبتدئون فقط`, `الهواة غير المعترفين`, `المتفرجون`], a: 0 },
-        { q: `شنو هي النتيجة المباشرة لإتقان "${cleanTopic}" بالشكل المطلوب؟`, options: [`تحقيق النجاح والتفوق`, `الكسل التام`, `خسارة الوقت`, `الركود`], a: 0 },
-        { q: `علاش الناس كيهتمو بزاف بـ "${cleanTopic}" في العصر الحالي؟`, options: [`لأنه كيقدم حلول وقيمة حقيقية`, `لأنه غير مفيد`, `بصمغة مؤقتة`, `مجرد صدفة`], a: 0 }
-      ];
-      const template = variants[i % variants.length];
-      const shuffledOpts = [...template.options].sort(() => Math.random() - 0.5);
-      const correctIdx = shuffledOpts.indexOf(template.options[0]);
-
-      return {
-        q: `سؤال ${i + 1} حول "${cleanTopic}": ${template.q}`,
-        options: shuffledOpts,
-        a: correctIdx >= 0 ? correctIdx : 0,
-        wikiTitle: cleanTopic,
-        imageCaption: `تحدي الذكاء: ${cleanTopic}`,
-        imageEmoji: '🎯'
-      };
-    });
+  if (!parsedQuestions || parsedQuestions.length === 0) {
+    throw new Error(lastApiError || 'GEMINI_EMPTY_RESPONSE');
   }
+
+  const gradients = [
+    'from-indigo-950 via-blue-900 to-slate-950',
+    'from-emerald-950 via-teal-900 to-slate-950',
+    'from-rose-950 via-red-900 to-slate-950',
+    'from-amber-950 via-orange-900 to-slate-950',
+    'from-purple-950 via-fuchsia-900 to-slate-950',
+  ];
 
   const enriched = await Promise.all(
-    questions.slice(0, count).map(async (item) => {
+    parsedQuestions.slice(0, count).map(async (item, idx) => {
+      const rawOpts =
+        Array.isArray(item.options) && item.options.length === 4
+          ? item.options.map((o) => String(o))
+          : [cleanTopic, 'اختيار أ', 'اختيار ب', 'اختيار ج'];
+
+      const validAnswerIdx =
+        typeof item.a === 'number' && item.a >= 0 && item.a <= 3 ? item.a : 0;
+
+      const lookupWiki = item.wikiTitle || cleanTopic;
       let wikiImg = null;
       try {
-        wikiImg = await fetchExactSubjectImageFromWikipedia(item.wikiTitle || cleanTopic);
+        wikiImg = await fetchExactSubjectImageFromWikipedia(lookupWiki);
+        if (!wikiImg && lookupWiki !== cleanTopic) {
+          wikiImg = await fetchExactSubjectImageFromWikipedia(cleanTopic);
+        }
       } catch (e) {}
+
       return {
-        q: item.q,
-        options: Array.isArray(item.options) && item.options.length === 4 ? item.options : [cleanTopic, 'اختيار 1', 'اختيار 2', 'اختيار 3'],
-        a: typeof item.a === 'number' && item.a >= 0 && item.a <= 3 ? item.a : 0,
-        wikiTitle: item.wikiTitle || cleanTopic,
-        imageUrl: wikiImg || 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Flag_of_Morocco.svg/640px-Flag_of_Morocco.svg.png',
-        imageCaption: item.imageCaption || `تحدي: ${cleanTopic}`,
-        imageEmoji: item.imageEmoji || '💡'
+        q: item.q || `سؤال ${idx + 1} حول ${cleanTopic}؟`,
+        options: rawOpts,
+        a: validAnswerIdx,
+        wikiTitle: lookupWiki,
+        imageKeyword: lookupWiki,
+        imageUrl: wikiImg || '',
+        imageCaption: item.imageCaption || `${cleanTopic} — سؤال #${idx + 1}`,
+        imageEmoji: item.imageEmoji || '🧠',
+        imageGradient: gradients[idx % gradients.length],
       };
     })
   );
 
   return enriched;
 }
+
 function copyTextToClipboard(text) {
   try {
     const textArea = document.createElement('textarea');
@@ -1133,6 +1256,29 @@ function QuizArenaInstance({
   const [aiTopic, setAiTopic] = useState('');
   const [aiDifficulty, setAiDifficulty] = useState('Medium');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+  // إدارة الـ API Key مباشرة من الواجهة إذا ما تقراش من Vercel
+  const [customApiKey, setCustomApiKey] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.localStorage.getItem('QB_GEMINI_API_KEY') || '';
+    }
+    return '';
+  });
+  const [showApiKeyBox, setShowApiKeyBox] = useState(false);
+
+  const hasActiveGeminiKey = Boolean(resolveGeminiApiKey(customApiKey));
+
+  const handleSaveCustomApiKey = (val) => {
+    const clean = val.trim();
+    setCustomApiKey(clean);
+    if (typeof window !== 'undefined') {
+      if (clean) {
+        window.localStorage.setItem('QB_GEMINI_API_KEY', clean);
+      } else {
+        window.localStorage.removeItem('QB_GEMINI_API_KEY');
+      }
+    }
+  };
 
   const DEFAULT_SETTINGS = {
     roundDurationSec: 12,
@@ -1739,7 +1885,16 @@ function QuizArenaInstance({
     if (!topic) {
       setStatusBanner({
         type: 'error',
-        msg: 'كتب أي موضوع بغيتي (مثلاً: البطولة المغربية، التاريخ، الأنمي، الأفلام)!',
+        msg: '✍️ كتب أي موضوع بغيتي (مثلاً: البطولة المغربية، التاريخ، الأنمي، الأفلام)!',
+      });
+      return;
+    }
+
+    if (!resolveGeminiApiKey(customApiKey)) {
+      setShowApiKeyBox(true);
+      setStatusBanner({
+        type: 'error',
+        msg: '🔑 ما لقيناش مفتاح Gemini API! عافاك حط الـ API Key ديالك فـ الخانة اللي تحلات لتحت (أو دير Redeploy فـ Vercel بعد إضافة VITE_GEMINI_API_KEY).',
       });
       return;
     }
@@ -1749,14 +1904,15 @@ function QuizArenaInstance({
     setIsGeneratingAI(true);
     setStatusBanner({
       type: 'info',
-      msg: `✨ الذكاء الاصطناعي كيوجد ليك ${qCount} ديال الأسئلة بالدارجة مع الصور على "${topic}"...`,
+      msg: `✨ الذكاء الاصطناعي Gemini كيوجد ليك ${qCount} ديال الأسئلة حقيقية بالدارجة مع الصور على "${topic}"...`,
     });
 
     try {
       const generated = await generateAIQuizWithGemini(
         topic,
         aiDifficulty,
-        qCount
+        qCount,
+        customApiKey
       );
       const customTitle = `✨ ${topic} بالدارجة (${aiDifficulty})`;
 
@@ -1771,14 +1927,23 @@ function QuizArenaInstance({
 
       setStatusBanner({
         type: 'success',
-        msg: `✅ واجد! الكويز "${customTitle}" بالدارجة وبالصور جاهز للعب!`,
+        msg: `✅ واجد! تم توليد ${generated.length} أسئلة حقيقية حول "${topic}" بـ Gemini AI مع الصور!`,
       });
       sfx.lockIn();
     } catch (err) {
-      setStatusBanner({
-        type: 'error',
-        msg: 'تعذر توليد الكويز دابا، جرب مرة أخرى أو اختار باقة جاهزة بالدارجة!',
-      });
+      const errMsg = err?.message || '';
+      if (errMsg.includes('INVALID_API_KEY') || errMsg.includes('API_KEY')) {
+        setShowApiKeyBox(true);
+        setStatusBanner({
+          type: 'error',
+          msg: '❌ الـ API Key ديال Gemini غير صالح أو منتهي الصلاحية! تأكد منو فـ الخانة لتحت.',
+        });
+      } else {
+        setStatusBanner({
+          type: 'error',
+          msg: `⚠️ تعذر توليد الكويز من Gemini (${errMsg.slice(0, 80)}). تأكد من الـ API Key أو جرب مرة أخرى!`,
+        });
+      }
     } finally {
       setIsGeneratingAI(false);
     }
@@ -1994,7 +2159,7 @@ function QuizArenaInstance({
               : 'bg-indigo-500/15 border-indigo-500/40 text-indigo-200'
           }`}
         >
-          <div className="text-xs sm:text-sm font-medium">
+          <div className="text-xs sm:text-sm font-medium" dir="auto">
             {statusBanner.msg}
           </div>
           <button
@@ -2692,649 +2857,16 @@ function QuizArenaInstance({
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-fuchsia-950/50 via-slate-900 to-indigo-950/50 border border-fuchsia-500/30 space-y-2.5">
+              {/* قسم توليد الكويز بـ Gemini AI */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-fuchsia-950/50 via-slate-900 to-indigo-950/50 border border-fuchsia-500/30 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-fuchsia-300">
-                    <Sparkles className="w-3.5 h-3.5" /> صاوب كويز بالدارجة
-                    والصور بـ AI (أي موضوع بغيتي)
-                  </label>
-                  <div className="flex items-center gap-1">
-                    {['Easy', 'Medium', 'Hard'].map((diff) => (
-                      <button
-                        key={diff}
-                        type="button"
-                        onClick={() => setAiDifficulty(diff)}
-                        className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                          aiDifficulty === diff
-                            ? 'bg-fuchsia-500 text-white'
-                            : 'bg-slate-950/70 text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        {diff}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    type="text"
-                    dir="auto"
-                    value={aiTopic}
-                    onChange={(e) => setAiTopic(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleGenerateCustomQuiz();
-                    }}
-                    placeholder="كتب أي موضوع: المنتخب المغربي، الطبخ المغربي، الأنمي، ريال مدريد..."
-                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white focus:outline-none focus:border-fuchsia-500"
-                  />
-                  <button
-                    onClick={handleGenerateCustomQuiz}
-                    disabled={isGeneratingAI}
-                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg transition cursor-pointer shrink-0"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    {isGeneratingAI
-                      ? 'كيصاوب الأسئلة...'
-                      : 'صاوب كويز بالدارجة'}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  أو اختار باقة جاهزة بالدارجة المغربية (كل سؤال بصورته 📸)
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {[
-                    ['morocco', CURATED_PACKS.morocco],
-                    ['football', CURATED_PACKS.football],
-                    ['general', CURATED_PACKS.general],
-                    ['gaming', CURATED_PACKS.gaming],
-                  ].map(([key, pack]) => {
-                    const active = sessionData.quizTitle === pack.title;
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => handleSelectPack(key)}
-                        className={`p-3 rounded-xl border text-left transition flex items-center justify-between cursor-pointer ${
-                          active
-                            ? 'bg-indigo-600/25 border-indigo-400 text-white'
-                            : 'bg-slate-950/60 border-white/10 text-slate-300 hover:border-white/25'
-                        }`}
-                      >
-                        <span
-                          className="font-bold text-xs truncate pr-2"
-                          dir="rtl"
-                        >
-                          {pack.title}
-                        </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-300 font-semibold shrink-0">
-                          {pack.badge}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <button
-                onClick={handleStartMatch}
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-base shadow-xl shadow-emerald-500/25 flex items-center justify-center gap-2 transition cursor-pointer"
-              >
-                <Play className="w-5 h-5 fill-slate-950" />
-                {playersList.length >= 2
-                  ? 'بدا التحدي دابا (Launch 1v1 Match)!'
-                  : 'بدا الماتش دابا (أو تسنى صاحبك يدخل)'}
-              </button>
-            </div>
-          ) : (
-            <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-center text-xs sm:text-sm text-indigo-200 font-semibold">
-              ⏳ راك دخلتي للروم! كنتسناو {sessionData.hostName || 'Host'} يطلق
-              الماتش...
-            </div>
-          )}
-        </div>
-      )}
-
-      {view === 'game' && sessionData && currentQuestion && (
-        <div className="bg-slate-900/85 backdrop-blur-xl border border-white/10 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 items-center bg-slate-950/85 p-3 rounded-2xl border border-white/10">
-            {playersList.slice(0, 2).map((p, idx) => {
-              const locked =
-                p.answers &&
-                p.answers[currentRound] !== undefined &&
-                p.answers[currentRound] !== null;
-              return (
-                <div
-                  key={p.id}
-                  className={`flex items-center justify-between px-3 py-2 rounded-xl bg-slate-900 border ${
-                    locked ? 'border-emerald-500/40' : 'border-white/5'
-                  } ${idx === 1 ? 'sm:col-start-3' : ''}`}
-                >
-                  <div className="truncate pr-2">
-                    <div className="text-xs font-bold text-white truncate flex items-center gap-1.5">
-                      <span
-                        className={`w-2 h-2 rounded-full ${
-                          locked ? 'bg-emerald-400' : 'bg-slate-600'
-                        }`}
-                      />
-                      <span>{p.avatar || '⚡'}</span>
-                      <span className="truncate">{p.name}</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-                      <span>🔥 {p.streak || 0}</span>
-                      {locked && (
-                        <span className="text-emerald-400 font-bold">
-                          جاوب!
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-lg font-black text-indigo-400 font-mono">
-                    {p.score || 0}
-                  </div>
-                </div>
-              );
-            })}
-
-            <div className="col-span-2 sm:col-span-1 sm:col-start-2 sm:row-start-1 text-center">
-              <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold block">
-                السؤال
-              </span>
-              <span className="text-base font-black text-white">
-                {currentRound + 1} / {sessionData.questions.length}
-              </span>
-            </div>
-          </div>
-
-          {activeSettings.allowPowerUps && (
-            <div
-              className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-2xl bg-slate-950/70 border border-white/10"
-              dir="rtl"
-            >
-              <span className="text-[11px] font-extrabold text-amber-300 flex items-center gap-1">
-                <Zap className="w-3.5 h-3.5 fill-amber-300" /> مساعدات التحدي
-                (مرة فـ الماتش):
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={
-                    usedFiftyFifty || myAnswerObj !== undefined || roundRevealed
-                  }
-                  onClick={handleActivateFiftyFifty}
-                  className={`px-3 py-1 rounded-xl text-xs font-extrabold border transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                    usedFiftyFifty
-                      ? 'bg-slate-900 border-white/10 text-slate-500 line-through'
-                      : 'bg-indigo-600/30 hover:bg-indigo-600/50 border-indigo-400 text-indigo-200'
-                  }`}
-                >
-                  ✂️ 50/50 (حيد جوج غالطين)
-                </button>
-                <button
-                  type="button"
-                  disabled={
-                    usedDoublePoints ||
-                    myAnswerObj !== undefined ||
-                    roundRevealed
-                  }
-                  onClick={handleActivateDoublePoints}
-                  className={`px-3 py-1 rounded-xl text-xs font-extrabold border transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                    activeDoublePoints
-                      ? 'bg-amber-500 text-slate-950 border-amber-300 animate-pulse'
-                      : usedDoublePoints
-                      ? 'bg-slate-900 border-white/10 text-slate-500 line-through'
-                      : 'bg-amber-500/20 hover:bg-amber-500/35 border-amber-400/50 text-amber-200'
-                  }`}
-                >
-                  ⚡ x2 مضاعفة النقاط
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-1">
-            <div className="flex justify-between items-center text-xs font-bold">
-              <span className="text-indigo-300 truncate" dir="rtl">
-                {sessionData.quizTitle}
-              </span>
-              <span className="flex items-center gap-1 font-mono text-amber-400">
-                <Clock className="w-3.5 h-3.5" />{' '}
-                {(timeLeftMs / 1000).toFixed(1)}s /{' '}
-                {activeSettings.roundDurationSec}s
-              </span>
-            </div>
-            <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-white/10">
-              <div
-                className="h-full bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 transition-all duration-75"
-                style={{ width: `${(timeLeftMs / ROUND_DURATION) * 100}%` }}
-              />
-            </div>
-          </div>
-
-          {activeSettings.showPictures && (
-            <QuestionPictureBanner
-              question={currentQuestion}
-              roundNumber={currentRound + 1}
-            />
-          )}
-
-          <div className="py-1" dir="rtl">
-            <h2 className="text-lg sm:text-2xl font-extrabold text-white leading-relaxed text-right">
-              {currentQuestion.q}
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" dir="rtl">
-            {currentQuestion.options.map((optText, idx) => {
-              const isHiddenByFifty =
-                hiddenOptions.includes(idx) && !roundRevealed;
-              const isMyChoice =
-                selectedOption === idx ||
-                (myAnswerObj && myAnswerObj.choice === idx);
-              const isCorrectOption = idx === currentQuestion.a;
-
-              let btnClass =
-                'bg-slate-950/75 border-white/15 hover:border-indigo-500/60 hover:bg-indigo-950/40 text-slate-100';
-
-              if (isHiddenByFifty) {
-                btnClass =
-                  'bg-slate-950/20 border-white/5 text-slate-600 opacity-30 pointer-events-none';
-              } else if (roundRevealed) {
-                if (isCorrectOption) {
-                  btnClass =
-                    'bg-emerald-500/25 border-emerald-400 text-emerald-100 shadow-lg shadow-emerald-500/15';
-                } else if (isMyChoice && !isCorrectOption) {
-                  btnClass = 'bg-rose-500/25 border-rose-400 text-rose-100';
-                } else {
-                  btnClass =
-                    'bg-slate-950/40 border-white/5 text-slate-500 opacity-65';
-                }
-              } else if (isMyChoice) {
-                btnClass =
-                  'bg-indigo-600/35 border-indigo-400 text-white shadow-lg shadow-indigo-500/20';
-              }
-
-              return (
-                <button
-                  key={idx}
-                  disabled={
-                    myAnswerObj !== undefined ||
-                    roundRevealed ||
-                    isHiddenByFifty
-                  }
-                  onClick={() => handleLockAnswer(idx)}
-                  className={`p-3.5 sm:p-4 rounded-2xl border-2 text-right font-bold text-sm sm:text-base transition flex items-center justify-between gap-3 cursor-pointer disabled:cursor-default ${btnClass}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-xs font-extrabold shrink-0">
-                      {['A', 'B', 'C', 'D'][idx]}
-                    </span>
-                    <span className="leading-snug">
-                      {isHiddenByFifty ? '— إجابة محذوفة (50/50) —' : optText}
-                    </span>
-                  </div>
-                  {roundRevealed && isCorrectOption && (
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                  )}
-                  {roundRevealed && isMyChoice && !isCorrectOption && (
-                    <XCircle className="w-5 h-5 text-rose-400 shrink-0" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/10">
-            <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
-              <Smile className="w-3.5 h-3.5 text-indigo-400" /> صيفط إيموجي
-              لصاحبك:
-            </span>
-            <div className="flex items-center gap-1.5 overflow-x-auto">
-              {EMOJI_TAUNTS.map((em) => (
-                <button
-                  key={em}
-                  onClick={() => handleSendTaunt(em)}
-                  className="w-8 h-8 rounded-xl bg-slate-950 hover:bg-indigo-600/30 border border-white/10 flex items-center justify-center text-base hover:scale-110 transition cursor-pointer"
-                >
-                  {em}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            {!roundRevealed ? (
-              <div
-                className="p-3 rounded-2xl bg-slate-950/70 border border-white/10 text-center text-xs font-semibold text-slate-300"
-                dir="rtl"
-              >
-                {myAnswerObj
-                  ? '⚡ جاوبتي! كنتسناو منافسك يجاوب...'
-                  : '⚡ جاوب بالزربة باش تربح حتى لـ 1,000 نقطة + بونيس الستريك!'}
-              </div>
-            ) : (
-              <div className="p-4 rounded-2xl bg-slate-950/90 border border-white/15 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  {playersList.map((p) => {
-                    const pAns = p.answers?.[currentRound];
-                    const pts = pAns?.pts || 0;
-                    return (
-                      <div
-                        key={p.id}
-                        className={`px-3 py-1.5 rounded-xl border font-bold ${
-                          pts > 0
-                            ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
-                            : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
-                        }`}
-                      >
-                        {p.name}: {pts > 0 ? `+${pts} نقطة` : '0 نقطة'}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <button
-                  onClick={handleNextRound}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg transition cursor-pointer shrink-0"
-                >
-                  {currentRound + 1 >= sessionData.questions.length
-                    ? 'شوف الفائز النهائي 🏆'
-                    : 'السؤال الموالي ←'}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {view === 'results' && sessionData && (
-        <div className="bg-slate-900/85 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl text-center space-y-6">
-          <div className="inline-flex p-4 rounded-3xl bg-amber-500/15 border border-amber-500/30 text-amber-300 mx-auto">
-            <Trophy className="w-12 h-12" />
-          </div>
-
-          <div>
-            <h1 className="text-2xl sm:text-4xl font-black text-white">
-              {playersList[0]?.name} Wins the Match!
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Final Standings · {sessionData.quizTitle}
-            </p>
-          </div>
-
-          <div className="space-y-3 max-w-md mx-auto text-left">
-            {playersList.map((p, idx) => (
-              <div
-                key={p.id}
-                className={`p-4 rounded-2xl border flex items-center justify-between ${
-                  idx === 0
-                    ? 'bg-gradient-to-r from-amber-500/20 to-indigo-600/20 border-amber-400/50'
-                    : 'bg-slate-950/70 border-white/10'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center font-black text-sm">
-                    #{idx + 1}
-                  </span>
-                  <span className="text-2xl">{p.avatar || '🦁'}</span>
-                  <div>
-                    <div className="font-extrabold text-white text-sm sm:text-base">
-                      {p.name} {idx === 0 && '👑'}
-                    </div>
-                    <div className="text-xs text-slate-400">
-                      Streak: 🔥 {p.streak || 0}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-xl sm:text-2xl font-black text-indigo-300 font-mono">
-                  {p.score || 0}{' '}
-                  <span className="text-xs font-normal text-slate-400">
-                    pts
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="pt-3 flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              onClick={handleRematch}
-              className="px-6 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg transition cursor-pointer"
-            >
-              <RefreshCw className="w-4 h-4" /> Rematch / Pick New Quiz
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default function App() {
-  const [user] = useState(() => ({
-    uid: 'p1-' + Math.random().toString(36).substring(2, 9),
-  }));
-  const [authReady] = useState(true);
-  const [openRooms, setOpenRooms] = useState([]);
-  const [splitScreenMode, setSplitScreenMode] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [publicShareUrl, setPublicShareUrl] = useState('');
-
-  const [splitPlayer2User] = useState(() => ({
-    uid: 'p2-split-' + Math.random().toString(36).substring(2, 9),
-  }));
-
-  useEffect(() => {
-    const updateWaitingRooms = (list) => {
-      setOpenRooms([...list]);
-    };
-    roomSubscribers.add(updateWaitingRooms);
-    return () => roomSubscribers.delete(updateWaitingRooms);
-  }, []);
-
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between relative overflow-x-hidden selection:bg-indigo-500 selection:text-white">
-      <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 -right-40 w-96 h-96 bg-fuchsia-600/15 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
-      </div>
-
-      <header className="relative z-10 border-b border-white/10 bg-slate-900/70 backdrop-blur-md px-4 py-3">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-              <Zap className="w-5 h-5 text-white fill-white" />
-            </div>
-            <div>
-              <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-indigo-200 to-fuchsia-200 bg-clip-text text-transparent">
-                QuizBlitz Arena
-              </span>
-              <span className="hidden sm:inline-block ml-2 text-[11px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold">
-                v4 · Darija Edition & Real Photos
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                sfx.click();
-                setShowShareModal(true);
-              }}
-              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-lg shadow-emerald-500/25 transition cursor-pointer"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-              🚀 Import to Vercel Guide
-            </button>
-
-            <button
-              onClick={() => {
-                sfx.click();
-                setSplitScreenMode(!splitScreenMode);
-              }}
-              className={`px-3.5 py-2 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer ${
-                splitScreenMode
-                  ? 'bg-fuchsia-600 border-fuchsia-400 text-white shadow-lg shadow-fuchsia-600/30'
-                  : 'bg-slate-800/90 hover:bg-slate-700 border-white/15 text-slate-200'
-              }`}
-            >
-              <Columns className="w-4 h-4" />
-              <span className="hidden sm:inline">
-                {splitScreenMode
-                  ? 'Exit Split-Screen'
-                  : '2-Player Split-Screen'}
-              </span>
-            </button>
-
-            <button
-              onClick={() => {
-                sfx.muted = !muted;
-                setMuted(!muted);
-              }}
-              className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-white/10 text-slate-300 transition cursor-pointer"
-              title={muted ? 'Unmute Sound' : 'Mute Sound'}
-            >
-              {muted ? (
-                <VolumeX className="w-4 h-4" />
-              ) : (
-                <Volume2 className="w-4 h-4" />
-              )}
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {showShareModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 shadow-2xl space-y-5 animate-fadeIn">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300">
-                  <Globe className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-white">
-                    How to Import This v4 App to Vercel
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Deploy this exact React (`.jsx`) version to a live
-                    `.vercel.app` link in 2 minutes
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowShareModal(false)}
-                className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-slate-300 cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs sm:text-sm text-slate-200">
-              <div className="p-3.5 rounded-2xl bg-indigo-950/60 border border-indigo-500/30 space-y-1.5">
-                <div className="font-extrabold text-indigo-300 flex items-center gap-1.5">
-                  <span>1️⃣</span> Create a Free Vite + React Template on GitHub
-                  / StackBlitz
-                </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Go to <strong>vite.new/react</strong> (or create a React
-                  project on GitHub), replace <code>src/App.jsx</code> with the
-                  code from the <strong>quizblitz_arena.jsx</strong> editor tab
-                  on the right, and install <code>lucide-react</code> and{' '}
-                  <code>mqtt</code>.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-emerald-950/50 border border-emerald-500/30 space-y-2">
-                <div className="font-extrabold text-emerald-300 flex items-center gap-1.5">
-                  <span>2️⃣</span> Import to Vercel.com
-                </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Log into <strong>vercel.com/new</strong>, import your GitHub
-                  repository, and click <strong>Deploy</strong>. Once on Vercel,
-                  the built-in global MQTT server (
-                  <code>wss://broker.emqx.io:8084/mqtt</code>) unlocks
-                  automatically so you and your friends can play live across any
-                  phone or PC!
-                </p>
-                <input
-                  type="text"
-                  value={publicShareUrl}
-                  onChange={(e) => setPublicShareUrl(e.target.value)}
-                  placeholder="Optional: Paste your https://your-app.vercel.app link here"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-xs text-white focus:outline-none focus:border-emerald-400"
-                />
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowShareModal(false)}
-              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black text-sm shadow-lg transition cursor-pointer"
-            >
-              Got It — Back to Arena
-            </button>
-          </div>
-        </div>
-      )}
-
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 py-6 flex flex-col justify-center">
-        {splitScreenMode ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <div className="space-y-2">
-              <div className="px-3.5 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-extrabold inline-flex items-center gap-2">
-                <span>🎮 Player 1 Screen (Host)</span>
-              </div>
-              <QuizArenaInstance
-                user={user}
-                authReady={authReady}
-                defaultName="أسد الأطلس 🦁"
-                isSplitChild={true}
-                sharedOpenRooms={openRooms}
-                publicShareUrl={publicShareUrl}
-                setPublicShareUrl={setPublicShareUrl}
-                onOpenShareModal={() => setShowShareModal(true)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="px-3.5 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-extrabold inline-flex items-center gap-2">
-                <span>🎮 Player 2 Screen (Challenger)</span>
-              </div>
-              <QuizArenaInstance
-                user={splitPlayer2User}
-                authReady={authReady}
-                defaultName="صقر المغرب 🦅"
-                isSplitChild={true}
-                sharedOpenRooms={openRooms}
-                publicShareUrl={publicShareUrl}
-                setPublicShareUrl={setPublicShareUrl}
-                onOpenShareModal={() => setShowShareModal(true)}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="max-w-3xl w-full mx-auto">
-            <QuizArenaInstance
-              user={user}
-              authReady={authReady}
-              defaultName=""
-              isSplitChild={false}
-              sharedOpenRooms={openRooms}
-              publicShareUrl={publicShareUrl}
-              setPublicShareUrl={setPublicShareUrl}
-              onOpenShareModal={() => setShowShareModal(true)}
-            />
-          </div>
-        )}
-      </main>
-
-      <footer className="relative z-10 border-t border-white/10 bg-slate-950/80 py-3 px-4 text-center text-xs text-slate-400">
-        QuizBlitz Arena v4 · 🇲🇦 Moroccan Darija Edition · Real-Time 1v1 Trivia
-      </footer>
-    </div>
-  );
-}
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-fuchsia-300">
+                      <Sparkles className="w-3.5 h-3.5" /> صاوب كويز بالدارجة
+                      والصور بـ Gemini AI
+                    </label>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold border ${
+                        hasActiveGeminiKey
+                          ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300'
+                          : 'bg-rose-500/20 border-rose-40
