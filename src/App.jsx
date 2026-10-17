@@ -882,8 +882,8 @@ async function generateAIQuizWithGemini(
   difficulty = 'Medium',
   count = 8
 ) {
-  const apiKey = '';
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   const systemPrompt = `You are an expert Moroccan trivia host creating a fast-paced 1v1 competitive quiz in authentic Moroccan Darija (الدارجة المغربية).
 Write all questions ("q") and all 4 multiple-choice options ("options") in clear, natural Moroccan Darija using Arabic script.
