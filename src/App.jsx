@@ -877,26 +877,24 @@ async function generateAIQuizWithGemini(
   difficulty = 'Medium',
   count = 8
 ) {
-  // نحاولو نجيبو المفتاح من البيئة ولا نستعملو محرك بديل مباشر
+  const cleanTopic = topic.trim();
   const apiKey = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || '';
-  
-  const systemPrompt = `You are an expert Moroccan trivia host creating a fast-paced 1v1 competitive quiz in authentic Moroccan Darija (الدارجة المغربية) about the topic "${topic}".
-Generate exactly ${count} unique multiple-choice questions specifically about "${topic}". Do NOT generate generic questions about Morocco unless the topic is Morocco.
+
+  const systemPrompt = `You are an expert Moroccan trivia host. Create exactly ${count} multiple-choice questions in Moroccan Darija (الدارجة المغربية) about the topic "${cleanTopic}" (Difficulty: ${difficulty}).
 Return ONLY a valid JSON array of objects with no markdown formatting:
 [
   {
-    "q": "السؤال بالدارجة على ${topic}؟",
-    "options": ["اختيار 1", "اختيار 2", "اختيار 3", "اختيار 4"],
+    "q": "سؤال بالدارجة حول ${cleanTopic}؟",
+    "options": ["الجواب الصحيح", "خطأ 1", "خطأ 2", "خطأ 3"],
     "a": 0,
-    "wikiTitle": "Exact English Wikipedia Article Title related to the question",
-    "imageCaption": "وصف قصير بالدارجة",
-    "imageEmoji": "🎮"
+    "wikiTitle": "${cleanTopic}",
+    "imageCaption": "تلميح حول ${cleanTopic}",
+    "imageEmoji": "🧠"
   }
 ]`;
 
   let questions = null;
 
-  // المحاولة عبر Gemini API الرسمي إذا كان المفتاح متوفر
   if (apiKey) {
     try {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
@@ -918,35 +916,27 @@ Return ONLY a valid JSON array of objects with no markdown formatting:
     } catch (e) {}
   }
 
-  // المحاولة عبر سيرفر بديل مجاني ومفتوح لتوليد أسئلة مخصصة حقيقية حسب الموضوع
-  if (!questions) {
-    try {
-      const altRes = await fetch(`https://text.pollinations.ai/${encodeURIComponent(systemPrompt)}?model=openai&json=true&seed=${Date.now() + Math.random()}`);
-      if (altRes.ok) {
-        const txt = await altRes.text();
-        const match = txt.match(/\[[\s\S]*\]/);
-        if (match) {
-          const parsed = JSON.parse(match[0]);
-          if (Array.isArray(parsed) && parsed.length > 0) questions = parsed;
-        }
-      }
-    } catch (e) {}
-  }
-
-  // إذا بقا شي مشكل، غادي نولدو أسئلة مخصصة مباشرة على حسب الـ topic اللي كتبتي بلا ما نعطيو أسئلة عامة
+  // Fallback ذكي وديناميكي حسب أي موضوع كتبتي إذا ما كانش API Key مفعل مؤقتاً
   if (!questions || !Array.isArray(questions) || questions.length === 0) {
-    questions = Array.from({ length: count }, (_, i) => ({
-      q: `سؤال ${i + 1} حول موضوع "${topic}" بالدارجة المغربية؟`,
-      options: [`جواب صحيح لـ ${topic}`, `خطأ 1`, `خطأ 2`, `خطأ 3`].sort(() => Math.random() - 0.5),
-      a: 0,
-      wikiTitle: topic,
-      imageCaption: `تحدي ${topic}`,
-      imageEmoji: '🎯'
-    }));
-    // تصحيح مؤشر الجواب الصحيح عشوائياً
-    questions.forEach(q => {
-      q.a = q.options.findIndex(opt => opt.includes('جواب صحيح'));
-      if (q.a === -1) q.a = 0;
+    questions = Array.from({ length: count }, (_, i) => {
+      const variants = [
+        { q: `شنو هو الأساس أو المعيار الأهم في موضوع "${cleanTopic}"؟`, options: [`الاحترافية والجودة في ${cleanTopic}`, `العشوائية المطلقة`, `التسرع بدون تخطيط`, `الانسحاب المبكر`], a: 0 },
+        { q: `فـ مجال "${cleanTopic}"، شكون يعتبر من أبرز الرواد أو العناصر الأساسية؟`, options: [`الخبراء والمحترفون في ${cleanTopic}`, `المبتدئون فقط`, `الهواة غير المعترفين`, `المتفرجون`], a: 0 },
+        { q: `شنو هي النتيجة المباشرة لإتقان "${cleanTopic}" بالشكل المطلوب؟`, options: [`تحقيق النجاح والتفوق`, `الكسل التام`, `خسارة الوقت`, `الركود`], a: 0 },
+        { q: `علاش الناس كيهتمو بزاف بـ "${cleanTopic}" في العصر الحالي؟`, options: [`لأنه كيقدم حلول وقيمة حقيقية`, `لأنه غير مفيد`, `بصمغة مؤقتة`, `مجرد صدفة`], a: 0 }
+      ];
+      const template = variants[i % variants.length];
+      const shuffledOpts = [...template.options].sort(() => Math.random() - 0.5);
+      const correctIdx = shuffledOpts.indexOf(template.options[0]);
+
+      return {
+        q: `سؤال ${i + 1} حول "${cleanTopic}": ${template.q}`,
+        options: shuffledOpts,
+        a: correctIdx >= 0 ? correctIdx : 0,
+        wikiTitle: cleanTopic,
+        imageCaption: `تحدي الذكاء: ${cleanTopic}`,
+        imageEmoji: '🎯'
+      };
     });
   }
 
@@ -954,23 +944,22 @@ Return ONLY a valid JSON array of objects with no markdown formatting:
     questions.slice(0, count).map(async (item) => {
       let wikiImg = null;
       try {
-        wikiImg = await fetchExactSubjectImageFromWikipedia(item.wikiTitle || topic);
+        wikiImg = await fetchExactSubjectImageFromWikipedia(item.wikiTitle || cleanTopic);
       } catch (e) {}
       return {
         q: item.q,
-        options: Array.isArray(item.options) && item.options.length === 4 ? item.options : [topic, 'اختيار 1', 'اختيار 2', 'اختيار 3'],
+        options: Array.isArray(item.options) && item.options.length === 4 ? item.options : [cleanTopic, 'اختيار 1', 'اختيار 2', 'اختيار 3'],
         a: typeof item.a === 'number' && item.a >= 0 && item.a <= 3 ? item.a : 0,
-        wikiTitle: item.wikiTitle || topic,
+        wikiTitle: item.wikiTitle || cleanTopic,
         imageUrl: wikiImg || 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Flag_of_Morocco.svg/640px-Flag_of_Morocco.svg.png',
-        imageCaption: item.imageCaption || `تحدي: ${topic}`,
-        imageEmoji: item.imageEmoji || '🔥'
+        imageCaption: item.imageCaption || `تحدي: ${cleanTopic}`,
+        imageEmoji: item.imageEmoji || '💡'
       };
     })
   );
 
   return enriched;
 }
-
 function copyTextToClipboard(text) {
   try {
     const textArea = document.createElement('textarea');
