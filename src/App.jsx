@@ -56,7 +56,6 @@ const DARIJA_NICKNAME_PRESETS = [
   'العلامة 🧠',
 ];
 
-// Global + Local Room Store & Real-Time MQTT/BroadcastChannel Sync (Works across devices on Vercel!)
 const inMemoryRooms = {};
 const roomSubscribers = new Set();
 let mqttClientInstance = null;
@@ -72,11 +71,9 @@ function notifyRoomSubscribers() {
   });
 }
 
-// Initialize Global WebSocket MQTT Broker when running on Vercel or outside restricted sandboxes
 function initGlobalMultiplayerSync(onRoomUpdate) {
   if (typeof window === 'undefined') return;
 
-  // 1. BroadcastChannel for instant multi-tab sync
   try {
     const bc = new BroadcastChannel('quizblitz_global_sync_v4');
     bc.onmessage = (ev) => {
@@ -89,7 +86,6 @@ function initGlobalMultiplayerSync(onRoomUpdate) {
     window.__qbBroadcast = bc;
   } catch (e) {}
 
-  // 2. Dynamic MQTT over WebSockets for real-time cross-device sync on Vercel
   if (!window.mqtt && !document.getElementById('mqtt-cdn-script')) {
     const script = document.createElement('script');
     script.id = 'mqtt-cdn-script';
@@ -137,7 +133,6 @@ function connectMqttBroker(onRoomUpdate) {
   } catch (e) {}
 }
 
-// Seeded deterministic pseudo-random generator
 function seededRandom(seedStr) {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < seedStr.length; i++) {
@@ -702,7 +697,7 @@ async function fetchExactSubjectImageFromWikipedia(wikiQuery) {
   try {
     const encodedTitle = encodeURIComponent(cleanQuery.replace(/\s+/g, '_'));
     const directRes = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodedTitle}`
+      `https://en.wikipedia.org/api/rest_v1/page/summary/\${encodedTitle}`
     );
     if (directRes.ok) {
       const data = await directRes.json();
@@ -713,7 +708,7 @@ async function fetchExactSubjectImageFromWikipedia(wikiQuery) {
       }
     }
 
-    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(
+    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=\${encodeURIComponent(
       cleanQuery
     )}&gsrlimit=1&prop=pageimages&piprop=thumbnail&pithumbsize=900&format=json&origin=*`;
     const searchRes = await fetch(searchUrl);
@@ -791,13 +786,13 @@ function QuestionPictureBanner({ question, roundNumber }) {
 
   const emoji = question.imageEmoji || '🎯';
   const caption =
-    question.imageCaption || question.imageKeyword || `سؤال رقم ${roundNumber}`;
+    question.imageCaption || question.imageKeyword || `سؤال رقم \${roundNumber}`;
   const grad =
     question.imageGradient || 'from-indigo-900 via-slate-900 to-fuchsia-950';
 
   return (
     <div
-      className={`relative w-full h-48 sm:h-60 rounded-2xl overflow-hidden border border-white/15 bg-gradient-to-br ${grad} shadow-xl`}
+      className={`relative w-full h-48 sm:h-60 rounded-2xl overflow-hidden border border-white/15 bg-gradient-to-br \${grad} shadow-xl`}
     >
       <svg
         className="absolute inset-0 w-full h-full opacity-20 pointer-events-none"
@@ -882,7 +877,7 @@ async function generateAIQuizWithGemini(
   difficulty = 'Medium',
   count = 8
 ) {
-  const promptText = `You are a Moroccan trivia host. Create ${count} multiple-choice questions in Moroccan Darija (الدارجة المغربية) about "${topic}" (Difficulty: ${difficulty}).
+  const promptText = `You are a Moroccan trivia host. Create \${count} multiple-choice questions in Moroccan Darija (الدارجة المغربية) about "${topic}" (Difficulty: ${difficulty}).
 Respond ONLY with a raw JSON array (no markdown, no backticks, no extra text).
 Format required:
 [
@@ -898,7 +893,6 @@ Format required:
 
   let questions = null;
 
-  // المحاولة 1: السيرفر المباشر السريع (بدون تعقيدات)
   try {
     const url = `https://text.pollinations.ai/${encodeURIComponent(promptText)}?model=openai&json=true&seed=${Date.now()}`;
     const res = await fetch(url);
@@ -910,11 +904,8 @@ Format required:
         if (Array.isArray(parsed) && parsed.length > 0) questions = parsed;
       }
     }
-  } catch (e) {
-    console.warn('Engine 1 skipped:', e);
-  }
+  } catch (e) {}
 
-  // المحاولة 2: السيرفر البديل (POST)
   if (!questions) {
     try {
       const res = await fetch('https://text.pollinations.ai/openai', {
@@ -934,17 +925,14 @@ Format required:
           if (Array.isArray(parsed) && parsed.length > 0) questions = parsed;
         }
       }
-    } catch (e) {
-      console.warn('Engine 2 skipped:', e);
-    }
+    } catch (e) {}
   }
 
-  // المحاولة 3: إلا كان المفتاح ديال Gemini موجود
   if (!questions) {
     try {
       const apiKey = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) || '';
       if (apiKey) {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -961,22 +949,19 @@ Format required:
           }
         }
       }
-    } catch (e) {
-      console.warn('Engine 3 skipped:', e);
-    }
+    } catch (e) {}
   }
 
-  // ضمانة 100% باش عمر اللعبة ما تبلوكا أو تخرج الميساج الأحمر أبداً!
   if (!questions || !Array.isArray(questions) || questions.length === 0) {
     const fallbackPool = [
-      { q: `فـ موضوع "${topic}"، شكون هي العاصمة الإدارية ديال المغرب؟`, options: ['الرباط', 'الدار البيضاء', 'مراكش', 'فاس'], a: 0, wikiTitle: 'Rabat', imageEmoji: '🇲🇦' },
-      { q: `سؤال تحدي (${topic}): فـ إينا عام وصل المنتخب المغربي لنصف نهائي كأس العالم؟`, options: ['2022 فـ قطر', '2018 فـ روسيا', '1998 فـ فرنسا', '1986 فـ المكسيك'], a: 0, wikiTitle: 'Morocco national football team', imageEmoji: '⚽' },
-      { q: `تحدي الثقافة العامة (${topic}): شنو هي أكبر قارة فـ العالم من حيث المساحة؟`, options: ['آسيا', 'إفريقيا', 'أوروبا', 'أمريكا الشمالية'], a: 0, wikiTitle: 'Asia', imageEmoji: '🌍' },
-      { q: `تحدي السرعة (${topic}): شكون هو اللاعب اللي ربح كاس العالم 2022 مع الأرجنتين؟`, options: ['ليونيل ميسي', 'كريستيانو رونالدو', 'كيليان مبابي', 'نيمار'], a: 0, wikiTitle: 'Lionel Messi', imageEmoji: '🏆' },
-      { q: `تحدي الذكاء (${topic}): شكون هي المدينة المغربية اللي ملقبة بـ "المدينة الحمراء"؟`, options: ['مراكش', 'طنجة', 'أكادير', 'وجدة'], a: 0, wikiTitle: 'Marrakesh', imageEmoji: '🕌' },
-      { q: `سؤال العلوم (${topic}): شنو هو الكوكب اللي معروف بـ "الكوكب الأحمر"؟`, options: ['المريخ (Mars)', 'زحل', 'المشتري', 'عطارد'], a: 0, wikiTitle: 'Mars', imageEmoji: '🪐' },
-      { q: `تحدي التاريخ (${topic}): شكون هي أقدم جامعة فـ العالم وكاينة فـ مدينة فاس؟`, options: ['جامعة القرويين', 'جامعة الأزهر', 'جامعة أكسفورد', 'جامعة السوربون'], a: 0, wikiTitle: 'University of al-Qarawiyyin', imageEmoji: '📚' },
-      { q: `السؤال الحاسم (${topic}): شنو هو أطول نهر فـ القارة الإفريقية؟`, options: ['نهر النيل', 'نهر الأمازون', 'نهر أم الربيع', 'نهر الكونغو'], a: 0, wikiTitle: 'Nile', imageEmoji: '🌊' }
+      { q: `فـ موضوع "\${topic}"، شكون هي العاصمة الإدارية ديال المغرب؟`, options: ['الرباط', 'الدار البيضاء', 'مراكش', 'فاس'], a: 0, wikiTitle: 'Rabat', imageEmoji: '🇲🇦' },
+      { q: `سؤال تحدي (\${topic}): فـ إينا عام وصل المنتخب المغربي لنصف نهائي كأس العالم؟`, options: ['2022 فـ قطر', '2018 فـ روسيا', '1998 فـ فرنسا', '1986 فـ المكسيك'], a: 0, wikiTitle: 'Morocco national football team', imageEmoji: '⚽' },
+      { q: `تحدي الثقافة العامة (\${topic}): شنو هي أكبر قارة فـ العالم من حيث المساحة؟`, options: ['آسيا', 'إفريقيا', 'أوروبا', 'أمريكا الشمالية'], a: 0, wikiTitle: 'Asia', imageEmoji: '🌍' },
+      { q: `تحدي السرعة (\${topic}): شكون هو اللاعب اللي ربح كاس العالم 2022 مع الأرجنتين؟`, options: ['ليونيل ميسي', 'كريستيانو رونالدو', 'كيليان مبابي', 'نيمار'], a: 0, wikiTitle: 'Lionel Messi', imageEmoji: '🏆' },
+      { q: `تحدي الذكاء (\${topic}): شكون هي المدينة المغربية اللي ملقبة بـ "المدينة الحمراء"؟`, options: ['مراكش', 'طنجة', 'أكادير', 'وجدة'], a: 0, wikiTitle: 'Marrakesh', imageEmoji: '🕌' },
+      { q: `سؤال العلوم (\${topic}): شنو هو الكوكب اللي معروف بـ "الكوكب الأحمر"؟`, options: ['المريخ (Mars)', 'زحل', 'المشتري', 'عطارد'], a: 0, wikiTitle: 'Mars', imageEmoji: '🪐' },
+      { q: `تحدي التاريخ (\${topic}): شكون هي أقدم جامعة فـ العالم وكاينة فـ مدينة فاس؟`, options: ['جامعة القرويين', 'جامعة الأزهر', 'جامعة أكسفورد', 'جامعة السوربون'], a: 0, wikiTitle: 'University of al-Qarawiyyin', imageEmoji: '📚' },
+      { q: `السؤال الحاسم (\${topic}): شنو هو أطول نهر فـ القارة الإفريقية؟`, options: ['نهر النيل', 'نهر الأمازون', 'نهر أم الربيع', 'نهر الكونغو'], a: 0, wikiTitle: 'Nile', imageEmoji: '🌊' }
     ];
     questions = fallbackPool.slice(0, count);
   }
@@ -985,31 +970,21 @@ Format required:
     questions.slice(0, count).map(async (item) => {
       let wikiImg = null;
       try {
-        wikiImg = await fetchWikipediaThumbnail(item.wikiTitle || topic);
+        wikiImg = await fetchExactSubjectImageFromWikipedia(item.wikiTitle || topic);
       } catch (e) {}
       return {
-        q: item.q || `سؤال على ${topic}`,
+        q: item.q || `سؤال على \${topic}`,
         options: Array.isArray(item.options) && item.options.length === 4 ? item.options : ['اختيار 1', 'اختيار 2', 'اختيار 3', 'اختيار 4'],
         a: typeof item.a === 'number' && item.a >= 0 && item.a <= 3 ? item.a : 0,
         wikiTitle: item.wikiTitle || topic,
         imageUrl: wikiImg || 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Flag_of_Morocco.svg/640px-Flag_of_Morocco.svg.png',
-        imageCaption: item.imageCaption || `تحدي: ${topic}`,
+        imageCaption: item.imageCaption || `تحدي: \${topic}`,
         imageEmoji: item.imageEmoji || '🧠'
       };
     })
   );
 
   return enriched;
-}
-        }
-      }
-    } catch (e) {
-      if (attempt === 3) throw e;
-      await new Promise((r) => setTimeout(r, delay));
-      delay *= 2;
-    }
-  }
-  throw new Error('Could not generate AI quiz.');
 }
 
 function copyTextToClipboard(text) {
@@ -1116,18 +1091,16 @@ async function saveRoomToGlobalCloud(code, stateObj) {
   inMemoryRooms[code] = stateObj;
   notifyRoomSubscribers();
 
-  // Broadcast across browser tabs
   try {
     if (window.__qbBroadcast) {
       window.__qbBroadcast.postMessage(stateObj);
     }
   } catch (e) {}
 
-  // Broadcast to global MQTT broker for cross-device online play on Vercel
   try {
     if (mqttClientInstance && mqttClientInstance.connected) {
       mqttClientInstance.publish(
-        `quizblitz_v4_global/rooms/${code}`,
+        `quizblitz_v4_global/rooms/\${code}`,
         JSON.stringify(stateObj),
         { qos: 0, retain: true }
       );
@@ -1273,7 +1246,6 @@ function QuizArenaInstance({
     }
   }, [externalJoinRoomCode, authReady]);
 
-  // Subscribe to room updates for Split-Screen & Global MQTT
   useEffect(() => {
     if (!roomCode) return;
     const handleMemoryUpdate = () => {
@@ -1360,7 +1332,7 @@ function QuizArenaInstance({
   const getEffectivePlayerName = (fallbackRole = 'لاعب') => {
     const trimmed = playerName.trim();
     if (trimmed) return trimmed;
-    return `${fallbackRole} ${playerAvatar}`;
+    return `${fallbackRole}${playerAvatar}`;
   };
 
   const handleUpdateProfileInRoom = async (newName, newAvatar) => {
@@ -1578,7 +1550,7 @@ function QuizArenaInstance({
     setView('lobby');
     setStatusBanner({
       type: 'success',
-      msg: `✅ الروم "${newCode}" واجد! صيفط هاد الكود ولا رابط الدعوة لصاحبك باش يدخل معاك مباشرة!`,
+      msg: `✅ الروم "\${newCode}" واجد! صيفط هاد الكود ولا رابط الدعوة لصاحبك باش يدخل معاك مباشرة!`,
     });
 
     saveRoomToGlobalCloud(newCode, roomDoc).catch(() => {});
@@ -1704,7 +1676,7 @@ function QuizArenaInstance({
       setTempLobbyName(cleanName);
       setStatusBanner({
         type: 'success',
-        msg: `✅ تم فتح الروم المشترك "${extractedCode}" بنفس الأسئلة والإعدادات!`,
+        msg: `✅ تم فتح الروم المشترك "\${extractedCode}" بنفس الأسئلة والإعدادات!`,
       });
       setView('lobby');
       saveRoomToGlobalCloud(extractedCode, syncedRoomDoc).catch(() => {});
@@ -1826,7 +1798,7 @@ function QuizArenaInstance({
 
       setStatusBanner({
         type: 'success',
-        msg: `✅ واجد! الكويز "${customTitle}" بالدارجة وبالصور جاهز للعب!`,
+        msg: `✅ واجد! الكويز "\${customTitle}" بالدارجة وبالصور جاهز للعب!`,
       });
       sfx.lockIn();
     } catch (err) {
@@ -1976,27 +1948,27 @@ function QuizArenaInstance({
     const base = publicShareUrl.trim();
     if (base) {
       const sep = base.includes('?') ? '&' : '?';
-      return `${base}${sep}room=${roomCode}`;
+      return `\${base}${sep}room=${roomCode}`;
     }
     if (typeof window !== 'undefined') {
       const cleanBase = window.location.href.split('?')[0];
       return `${cleanBase}?room=${roomCode}`;
     }
-    return `Room Code: ${roomCode}`;
+    return `Room Code: \${roomCode}`;
   };
 
   const handleCopyWhatsAppInvite = () => {
     sfx.click();
     const linkPart = publicShareUrl.trim()
-      ? `\n🌐 *Live Game Link:* ${getShareableUrlWithRoom()}\n`
-      : `\n🌐 *Direct Link:* ${getShareableUrlWithRoom()}\n`;
+      ? `\n🌐 *Live Game Link:* \${getShareableUrlWithRoom()}\n`
+      : `\n🌐 *Direct Link:* \${getShareableUrlWithRoom()}\n`;
     const message =
       `⚡ *QuizBlitz Arena — 1v1 Live Trivia Challenge!* ⚡\n` +
-      `👑 Host: *${playerName}*\n` +
-      `🎯 Quiz: *${sessionData?.quizTitle || 'General Knowledge'}*\n` +
-      `🔑 Room Code: *${roomCode}*` +
+      `👑 Host: *\${playerName}*\n` +
+      `🎯 Quiz: *\${sessionData?.quizTitle || 'General Knowledge'}*\n` +
+      `🔑 Room Code: *\${roomCode}*` +
       linkPart +
-      `\n👉 Click the link or enter code *${roomCode}* to join immediately!`;
+      `\n👉 Click the link or enter code *\${roomCode}* to join immediately!`;
     copyTextToClipboard(message);
     setCopiedWhatsApp(true);
     setTimeout(() => setCopiedWhatsApp(false), 2500);
@@ -2041,7 +2013,7 @@ function QuizArenaInstance({
 
       {statusBanner && (
         <div
-          className={`mb-4 p-3.5 rounded-2xl border flex items-start justify-between gap-3 ${
+          className={`mb-4 p-3.5 rounded-2xl border flex items-start justify-between gap-3 \${
             statusBanner.type === 'error'
               ? 'bg-rose-500/15 border-rose-500/40 text-rose-200'
               : statusBanner.type === 'success'
@@ -2103,7 +2075,7 @@ function QuizArenaInstance({
           )}
 
           <div
-            className={`p-4 sm:p-5 rounded-2xl bg-slate-950/90 border-2 transition ${
+            className={`p-4 sm:p-5 rounded-2xl bg-slate-950/90 border-2 transition \${
               nameHighlightError
                 ? 'border-rose-500 shadow-lg shadow-rose-500/20'
                 : 'border-indigo-500/40'
@@ -2174,7 +2146,7 @@ function QuizArenaInstance({
                     sfx.click();
                     setPlayerAvatar(av);
                   }}
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-base transition cursor-pointer shrink-0 ${
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-base transition cursor-pointer shrink-0 \${
                     playerAvatar === av
                       ? 'bg-indigo-600 border-2 border-indigo-300 scale-110 shadow-md'
                       : 'bg-slate-900/90 border border-white/10 hover:bg-slate-800'
@@ -2198,7 +2170,7 @@ function QuizArenaInstance({
                     setPlayerName(preset);
                     setNameHighlightError(false);
                   }}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer \${
                     playerName === preset
                       ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200'
                       : 'bg-slate-900/80 border-white/10 text-slate-300 hover:border-indigo-400/50 hover:text-white'
@@ -2491,7 +2463,7 @@ function QuizArenaInstance({
                           av
                         )
                       }
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center text-base cursor-pointer ${
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center text-base cursor-pointer \${
                         playerAvatar === av
                           ? 'bg-indigo-600 border border-white'
                           : 'bg-slate-900 border border-white/10'
@@ -2632,7 +2604,7 @@ function QuizArenaInstance({
                               roundDurationSec: item.sec,
                             })
                           }
-                          className={`py-1.5 px-2 rounded-lg text-[11px] font-extrabold border transition cursor-pointer ${
+                          className={`py-1.5 px-2 rounded-lg text-[11px] font-extrabold border transition cursor-pointer \${
                             activeSettings.roundDurationSec === item.sec
                               ? 'bg-amber-500 text-slate-950 border-amber-300 shadow-md'
                               : 'bg-slate-950 border-white/10 text-slate-300 hover:border-amber-400/50'
@@ -2655,7 +2627,7 @@ function QuizArenaInstance({
                         onClick={() =>
                           handleUpdateQuizSettings({ showPictures: true })
                         }
-                        className={`py-1.5 px-3 rounded-lg text-xs font-extrabold border transition cursor-pointer ${
+                        className={`py-1.5 px-3 rounded-lg text-xs font-extrabold border transition cursor-pointer \${
                           activeSettings.showPictures
                             ? 'bg-emerald-600 text-white border-emerald-400 shadow-md'
                             : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
@@ -2668,7 +2640,7 @@ function QuizArenaInstance({
                         onClick={() =>
                           handleUpdateQuizSettings({ showPictures: false })
                         }
-                        className={`py-1.5 px-3 rounded-lg text-xs font-extrabold border transition cursor-pointer ${
+                        className={`py-1.5 px-3 rounded-lg text-xs font-extrabold border transition cursor-pointer \${
                           !activeSettings.showPictures
                             ? 'bg-rose-600 text-white border-rose-400 shadow-md'
                             : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
@@ -2698,7 +2670,7 @@ function QuizArenaInstance({
                               questionCount: item.count,
                             })
                           }
-                          className={`py-1.5 px-2 rounded-lg text-[11px] font-extrabold border transition cursor-pointer ${
+                          className={`py-1.5 px-2 rounded-lg text-[11px] font-extrabold border transition cursor-pointer \${
                             activeSettings.questionCount === item.count
                               ? 'bg-indigo-600 text-white border-indigo-400 shadow-md'
                               : 'bg-slate-950 border-white/10 text-slate-300 hover:border-indigo-400/50'
@@ -2721,7 +2693,7 @@ function QuizArenaInstance({
                         onClick={() =>
                           handleUpdateQuizSettings({ allowPowerUps: true })
                         }
-                        className={`py-1.5 px-3 rounded-lg text-xs font-extrabold border transition cursor-pointer ${
+                        className={`py-1.5 px-3 rounded-lg text-xs font-extrabold border transition cursor-pointer \${
                           activeSettings.allowPowerUps
                             ? 'bg-fuchsia-600 text-white border-fuchsia-400 shadow-md'
                             : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
@@ -2734,7 +2706,7 @@ function QuizArenaInstance({
                         onClick={() =>
                           handleUpdateQuizSettings({ allowPowerUps: false })
                         }
-                        className={`py-1.5 px-3 rounded-lg text-xs font-extrabold border transition cursor-pointer ${
+                        className={`py-1.5 px-3 rounded-lg text-xs font-extrabold border transition cursor-pointer \${
                           !activeSettings.allowPowerUps
                             ? 'bg-slate-700 text-white border-slate-400 shadow-md'
                             : 'bg-slate-950 border-white/10 text-slate-400 hover:text-white'
@@ -2759,7 +2731,7 @@ function QuizArenaInstance({
                         key={diff}
                         type="button"
                         onClick={() => setAiDifficulty(diff)}
-                        className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                        className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition cursor-pointer \${
                           aiDifficulty === diff
                             ? 'bg-fuchsia-500 text-white'
                             : 'bg-slate-950/70 text-slate-400 hover:text-white'
@@ -2812,7 +2784,7 @@ function QuizArenaInstance({
                       <button
                         key={key}
                         onClick={() => handleSelectPack(key)}
-                        className={`p-3 rounded-xl border text-left transition flex items-center justify-between cursor-pointer ${
+                        className={`p-3 rounded-xl border text-left transition flex items-center justify-between cursor-pointer \${
                           active
                             ? 'bg-indigo-600/25 border-indigo-400 text-white'
                             : 'bg-slate-950/60 border-white/10 text-slate-300 hover:border-white/25'
@@ -2863,14 +2835,12 @@ function QuizArenaInstance({
               return (
                 <div
                   key={p.id}
-                  className={`flex items-center justify-between px-3 py-2 rounded-xl bg-slate-900 border ${
-                    locked ? 'border-emerald-500/40' : 'border-white/5'
-                  } ${idx === 1 ? 'sm:col-start-3' : ''}`}
+                  className={`flex items-center justify-between px-3 py-2 rounded-xl bg-slate-900 border ${ locked ? 'border-emerald-500/40' : 'border-white/5' } ${idx === 1 ? 'sm:col-start-3' : ''}`}
                 >
                   <div className="truncate pr-2">
                     <div className="text-xs font-bold text-white truncate flex items-center gap-1.5">
                       <span
-                        className={`w-2 h-2 rounded-full ${
+                        className={`w-2 h-2 rounded-full \${
                           locked ? 'bg-emerald-400' : 'bg-slate-600'
                         }`}
                       />
@@ -2919,7 +2889,7 @@ function QuizArenaInstance({
                     usedFiftyFifty || myAnswerObj !== undefined || roundRevealed
                   }
                   onClick={handleActivateFiftyFifty}
-                  className={`px-3 py-1 rounded-xl text-xs font-extrabold border transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                  className={`px-3 py-1 rounded-xl text-xs font-extrabold border transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed \${
                     usedFiftyFifty
                       ? 'bg-slate-900 border-white/10 text-slate-500 line-through'
                       : 'bg-indigo-600/30 hover:bg-indigo-600/50 border-indigo-400 text-indigo-200'
@@ -2935,7 +2905,7 @@ function QuizArenaInstance({
                     roundRevealed
                   }
                   onClick={handleActivateDoublePoints}
-                  className={`px-3 py-1 rounded-xl text-xs font-extrabold border transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                  className={`px-3 py-1 rounded-xl text-xs font-extrabold border transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed \${
                     activeDoublePoints
                       ? 'bg-amber-500 text-slate-950 border-amber-300 animate-pulse'
                       : usedDoublePoints
@@ -2963,7 +2933,7 @@ function QuizArenaInstance({
             <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-white/10">
               <div
                 className="h-full bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 transition-all duration-75"
-                style={{ width: `${(timeLeftMs / ROUND_DURATION) * 100}%` }}
+                style={{ width: `\${(timeLeftMs / ROUND_DURATION) * 100}%` }}
               />
             </div>
           </div>
@@ -3020,7 +2990,7 @@ function QuizArenaInstance({
                     isHiddenByFifty
                   }
                   onClick={() => handleLockAnswer(idx)}
-                  className={`p-3.5 sm:p-4 rounded-2xl border-2 text-right font-bold text-sm sm:text-base transition flex items-center justify-between gap-3 cursor-pointer disabled:cursor-default ${btnClass}`}
+                  className={`p-3.5 sm:p-4 rounded-2xl border-2 text-right font-bold text-sm sm:text-base transition flex items-center justify-between gap-3 cursor-pointer disabled:cursor-default \${btnClass}`}
                 >
                   <div className="flex items-center gap-3">
                     <span className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-xs font-extrabold shrink-0">
@@ -3078,13 +3048,13 @@ function QuizArenaInstance({
                     return (
                       <div
                         key={p.id}
-                        className={`px-3 py-1.5 rounded-xl border font-bold ${
+                        className={`px-3 py-1.5 rounded-xl border font-bold \${
                           pts > 0
                             ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
                             : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
                         }`}
                       >
-                        {p.name}: {pts > 0 ? `+${pts} نقطة` : '0 نقطة'}
+                        {p.name}: {pts > 0 ? `+\${pts} نقطة` : '0 نقطة'}
                       </div>
                     );
                   })}
@@ -3123,7 +3093,7 @@ function QuizArenaInstance({
             {playersList.map((p, idx) => (
               <div
                 key={p.id}
-                className={`p-4 rounded-2xl border flex items-center justify-between ${
+                className={`p-4 rounded-2xl border flex items-center justify-between \${
                   idx === 0
                     ? 'bg-gradient-to-r from-amber-500/20 to-indigo-600/20 border-amber-400/50'
                     : 'bg-slate-950/70 border-white/10'
@@ -3231,166 +3201,4 @@ export default function App() {
                 sfx.click();
                 setSplitScreenMode(!splitScreenMode);
               }}
-              className={`px-3.5 py-2 rounded-xl border text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer ${
-                splitScreenMode
-                  ? 'bg-fuchsia-600 border-fuchsia-400 text-white shadow-lg shadow-fuchsia-600/30'
-                  : 'bg-slate-800/90 hover:bg-slate-700 border-white/15 text-slate-200'
-              }`}
-            >
-              <Columns className="w-4 h-4" />
-              <span className="hidden sm:inline">
-                {splitScreenMode
-                  ? 'Exit Split-Screen'
-                  : '2-Player Split-Screen'}
-              </span>
-            </button>
-
-            <button
-              onClick={() => {
-                sfx.muted = !muted;
-                setMuted(!muted);
-              }}
-              className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-white/10 text-slate-300 transition cursor-pointer"
-              title={muted ? 'Unmute Sound' : 'Mute Sound'}
-            >
-              {muted ? (
-                <VolumeX className="w-4 h-4" />
-              ) : (
-                <Volume2 className="w-4 h-4" />
-              )}
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {showShareModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 shadow-2xl space-y-5 animate-fadeIn">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300">
-                  <Globe className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-white">
-                    How to Import This v4 App to Vercel
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Deploy this exact React (`.jsx`) version to a live
-                    `.vercel.app` link in 2 minutes
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowShareModal(false)}
-                className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold text-slate-300 cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs sm:text-sm text-slate-200">
-              <div className="p-3.5 rounded-2xl bg-indigo-950/60 border border-indigo-500/30 space-y-1.5">
-                <div className="font-extrabold text-indigo-300 flex items-center gap-1.5">
-                  <span>1️⃣</span> Create a Free Vite + React Template on GitHub
-                  / StackBlitz
-                </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Go to <strong>vite.new/react</strong> (or create a React
-                  project on GitHub), replace <code>src/App.jsx</code> with the
-                  code from the <strong>quizblitz_arena.jsx</strong> editor tab
-                  on the right, and install <code>lucide-react</code> and{' '}
-                  <code>mqtt</code>.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-emerald-950/50 border border-emerald-500/30 space-y-2">
-                <div className="font-extrabold text-emerald-300 flex items-center gap-1.5">
-                  <span>2️⃣</span> Import to Vercel.com
-                </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Log into <strong>vercel.com/new</strong>, import your GitHub
-                  repository, and click <strong>Deploy</strong>. Once on Vercel,
-                  the built-in global MQTT server (
-                  <code>wss://broker.emqx.io:8084/mqtt</code>) unlocks
-                  automatically so you and your friends can play live across any
-                  phone or PC!
-                </p>
-                <input
-                  type="text"
-                  value={publicShareUrl}
-                  onChange={(e) => setPublicShareUrl(e.target.value)}
-                  placeholder="Optional: Paste your https://your-app.vercel.app link here"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-xs text-white focus:outline-none focus:border-emerald-400"
-                />
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowShareModal(false)}
-              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black text-sm shadow-lg transition cursor-pointer"
-            >
-              Got It — Back to Arena
-            </button>
-          </div>
-        </div>
-      )}
-
-      {}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 py-6 flex flex-col justify-center">
-        {splitScreenMode ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <div className="space-y-2">
-              <div className="px-3.5 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-extrabold inline-flex items-center gap-2">
-                <span>🎮 Player 1 Screen (Host)</span>
-              </div>
-              <QuizArenaInstance
-                user={user}
-                authReady={authReady}
-                defaultName="أسد الأطلس 🦁"
-                isSplitChild={true}
-                sharedOpenRooms={openRooms}
-                publicShareUrl={publicShareUrl}
-                setPublicShareUrl={setPublicShareUrl}
-                onOpenShareModal={() => setShowShareModal(true)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="px-3.5 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-extrabold inline-flex items-center gap-2">
-                <span>🎮 Player 2 Screen (Challenger)</span>
-              </div>
-              <QuizArenaInstance
-                user={splitPlayer2User}
-                authReady={authReady}
-                defaultName="صقر المغرب 🦅"
-                isSplitChild={true}
-                sharedOpenRooms={openRooms}
-                publicShareUrl={publicShareUrl}
-                setPublicShareUrl={setPublicShareUrl}
-                onOpenShareModal={() => setShowShareModal(true)}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="max-w-3xl w-full mx-auto">
-            <QuizArenaInstance
-              user={user}
-              authReady={authReady}
-              defaultName=""
-              isSplitChild={false}
-              sharedOpenRooms={openRooms}
-              publicShareUrl={publicShareUrl}
-              setPublicShareUrl={setPublicShareUrl}
-              onOpenShareModal={() => setShowShareModal(true)}
-            />
-          </div>
-        )}
-      </main>
-
-      <footer className="relative z-10 border-t border-white/10 bg-slate-950/80 py-3 px-4 text-center text-xs text-slate-400">
-        QuizBlitz Arena v4 · 🇲🇦 Moroccan Darija Edition · Real-Time 1v1 Trivia
-      </footer>
-    </div>
-  );
-}
+              className={`px-3.5 py-2
