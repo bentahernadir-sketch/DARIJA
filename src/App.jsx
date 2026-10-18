@@ -201,379 +201,1048 @@ class SoundFX {
 const sfx = new SoundFX();
 
 const CURATED_PACKS = {
-  morocco: {
-    title: '🇲🇦 ثقافة وتاريخ المغرب بالدارجة',
-    badge: 'المغرب',
+  makla: {
+    title: '🍲 الماكلة المغربية وأسرار الطبخ',
+    badge: 'الطبخ المغربي',
+    category: '🇲🇦 تراث ومغربيات',
     questions: [
       {
-        q: 'شنو هي أقدم جامعة فالعالم واللي كاينة فمدينة فاس؟',
-        options: ['جامعة القرويين', 'جامعة الأخوين', 'جامعة محمد الخامس', 'مدرسة بن يوسف'],
-        a: 0,
-        wikiTitle: 'University_of_al-Qarawiyyin',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Al_Qarawiyyin_Mosque_courtyard_2014.jpg/960px-Al_Qarawiyyin_Mosque_courtyard_2014.jpg',
-        imageCaption: 'جامع وجامعة القرويين فـ فاس العتيقة',
-        imageEmoji: '🕌',
-        imageKeyword: 'University of al-Qarawiyyin Fes',
-        imageGradient: 'from-emerald-900 via-teal-900 to-slate-900'
-      },
-      {
-        q: 'أشمن مدينة مغربية معروفة بـ "المدينة الزرقاء" ولا الجوهرة الزرقاء؟',
-        options: ['الصويرة', 'شفشاون', 'أصيلة', 'إفران'],
-        a: 1,
-        wikiTitle: 'Chefchaouen',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Chefchaouen_the_blue_pearl_of_Morocco.jpg/960px-Chefchaouen_the_blue_pearl_of_Morocco.jpg',
-        imageCaption: 'أزقة مدينة شفشاون الزرقاء',
-        imageEmoji: '💙',
-        imageKeyword: 'Chefchaouen',
-        imageGradient: 'from-sky-900 via-blue-900 to-indigo-950'
-      },
-      {
-        q: 'شنو هو أعلى جبل فالمغرب وفشمال إفريقيا كامل؟',
-        options: ['جبل تدغين', 'جبل بويبلان', 'جبل توبقال', 'جبل مكون'],
-        a: 2,
-        wikiTitle: 'Toubkal',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Toubkal_from_amsouzart.jpg/960px-Toubkal_from_amsouzart.jpg',
-        imageCaption: 'قمة جبل توبقال فـ الأطلس الكبير (4167 متر)',
-        imageEmoji: '🏔️',
-        imageKeyword: 'Toubkal',
-        imageGradient: 'from-amber-900 via-stone-900 to-slate-900'
-      },
-      {
-        q: 'فأشمن مدينة مغربية كاينة صومعة حسان الشهيرة؟',
-        options: ['مراكش', 'الرباط', 'مكناس', 'طنجة'],
-        a: 1,
-        wikiTitle: 'Hassan_Tower',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Tour_Hassan_Rabat_Morocco.jpg/960px-Tour_Hassan_Rabat_Morocco.jpg',
-        imageCaption: 'صومعة حسان التاريخية بمدينة الرباط',
-        imageEmoji: '🏛️',
-        imageKeyword: 'Hassan Tower',
-        imageGradient: 'from-orange-900 via-amber-950 to-slate-900'
-      },
-      {
-        q: 'شنو هي الأكلة المغربية التقليدية اللي كطيب فـ قلة ديال الطين فـ الفرناطشي ومعروفة بها مدينة مراكش؟',
-        options: ['الطنجية المراكشية', 'البسطيلة', 'الرفيسة', 'الحريرة'],
+        q: 'شنو هي التبزيرة (العطرية) الأساسية اللي كتعطي للطنجية المراكشية المذاق الأصيل ديالها وما كيدارش فيها البصلة نهائياً؟',
+        options: ['الكامون، الثومة، المصير، السمن الحار والزعفران الحر', 'التحميرة، القزبور يابس، البصلة محكوكة ومطيشة', 'القرفة، سكنجبير، الكوزة واللوز مقلي', 'الخرقوم، البزار الأبيض، والربيع مقطع'],
         a: 0,
         wikiTitle: 'Tangia',
         imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Tanjia_Marrakchia.jpg/960px-Tanjia_Marrakchia.jpg',
-        imageCaption: 'الطنجية المراكشية التقليدية فـ قلة الطين',
+        imageCaption: 'الطنجية المراكشية فـ قلة الطين بالفرناطشي',
         imageEmoji: '🏺',
         imageKeyword: 'Tangia',
-        imageGradient: 'from-red-900 via-orange-950 to-slate-900'
+        imageGradient: 'from-amber-900 via-orange-950 to-slate-900'
       },
       {
-        q: 'شكون هو الرحالة المغربي الشهير اللي ولد فـ طنجة وسافر العالم كامل فـ القرن 14؟',
-        options: ['ابن خلدون', 'ابن بطوطة', 'الشريف الإدريسي', 'ابن رشد'],
+        q: 'فـ تحضير "راس الحانوت" المغربي الأصيل ديال المروزية أو الرفيسة، شحال كيوصل عدد الأعشاب والتوابل اللي كيخلط العطار المزيان؟',
+        options: ['غير 4 ديال التوابل', 'ما بين 20 حتى لـ 35 عشبة وتابل', 'أقل من 7 ديال التوابل', 'غير البزار والكمون والملحة'],
         a: 1,
-        wikiTitle: 'Ibn_Battuta',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Ibn_Battuta_travel_map.png/960px-Ibn_Battuta_travel_map.png',
-        imageCaption: 'خريطة رحلات ابن بطوطة الطنجاوي عبر العالم',
-        imageEmoji: '🧭',
-        imageKeyword: 'Ibn Battuta',
-        imageGradient: 'from-amber-950 via-yellow-900 to-slate-900'
+        wikiTitle: 'Ras_el_hanout',
+        imageUrl: '',
+        imageCaption: 'خلطة راس الحانوت المغربية العريقة عند العطار',
+        imageEmoji: '🌶️',
+        imageKeyword: 'Ras el hanout',
+        imageGradient: 'from-red-900 via-amber-950 to-slate-900'
       },
       {
-        q: 'فأشمن سنة كانت المسيرة الخضراء المظفرة لاسترجاع الأقاليم الجنوبية؟',
-        options: ['1956', '1975', '1979', '1984'],
+        q: 'شنو الفرق الأساسي بين "البسطيلة الفاسية" التقليدية و"البسطيلة التطوانية/الشمالية" القديمة؟',
+        options: ['الفاسية بالحوت والتطوانية بالخضرة', 'الفاسية بالحمام واللوز على المذاق الحلو والمالح، والتطوانية بالدجاج والبيض والحامض بلا حلاوة زايدة', 'الفاسية كطيب فـ الماء والتطوانية فوق الفاخر', 'الفاسية كدار بالخبز والتطوانية بالسميدة'],
         a: 1,
-        wikiTitle: 'Green_March',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Green_March_1975.jpg/960px-Green_March_1975.jpg',
-        imageCaption: 'ملحمة المسيرة الخضراء بـ 350 ألف متطوع ومتطوعة',
-        imageEmoji: '🇲🇦',
-        imageKeyword: 'Green March Morocco',
-        imageGradient: 'from-red-950 via-emerald-950 to-slate-900'
-      },
-      {
-        q: 'شنو هي الشجرة اللي كتنبت فـ منطقة سوس والصويرة وكيطلعو فوقها الماعز وكنخرجو منها زيت أركان؟',
-        options: ['شجرة الأرز', 'شجرة أركان (Argan)', 'شجرة الزيتون', 'شجرة الصنوبر'],
-        a: 1,
-        wikiTitle: 'Argania',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Goats_in_Argan_tree_Morocco.jpg/960px-Goats_in_Argan_tree_Morocco.jpg',
-        imageCaption: 'شجرة أركان الشهيرة فـ منطقة سوس والصويرة',
-        imageEmoji: '🌳',
-        imageKeyword: 'Argania',
-        imageGradient: 'from-emerald-950 via-green-900 to-slate-900'
-      }
-    ]
-  },
-  football: {
-    title: '⚽ الكرة المغربية والعالمية بالدارجة',
-    badge: 'الرياضة',
-    questions: [
-      {
-        q: 'أشمن منتخب دار التاريخ فـ كأس العالم 2022 فـ قطر ووصل لنصف النهائي كأول منتخب إفريقي وعربي؟',
-        options: ['منتخب السنغال', 'المنتخب المغربي (أسود الأطلس)', 'منتخب مصر', 'منتخب تونس'],
-        a: 1,
-        wikiTitle: 'Morocco_national_football_team',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Morocco_national_football_team_2022.jpg/960px-Morocco_national_football_team_2022.jpg',
-        imageCaption: 'المنتخب المغربي — أسود الأطلس فـ مونديال قطر 2022',
-        imageEmoji: '🦁',
-        imageKeyword: 'Morocco national football team',
-        imageGradient: 'from-red-900 via-emerald-900 to-slate-900'
-      },
-      {
-        q: 'شكون هو الحارس المغربي اللي تألق فـ مونديال 2022 وربح جائزة أحسن حارس فـ إفريقيا؟',
-        options: ['منير المحمدي', 'ياسين بونو (Bono)', 'أنس الزنيتي', 'بادو الزاكي'],
-        a: 1,
-        wikiTitle: 'Yassine_Bounou',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Yassine_Bounou_2022.jpg/800px-Yassine_Bounou_2022.jpg',
-        imageCaption: 'الحارس الدولي المغربي ياسين بونو',
-        imageEmoji: '🧤',
-        imageKeyword: 'Yassine Bounou',
-        imageGradient: 'from-emerald-900 via-teal-950 to-slate-900'
-      },
-      {
-        q: 'أشمن فرقة فـ أوروبا رابحة أكبر عدد ديال ألقاب Champions League فالتاريخ؟',
-        options: ['AC Milan', 'FC Barcelona', 'Real Madrid', 'Bayern Munich'],
-        a: 2,
-        wikiTitle: 'Santiago_Bernabéu_Stadium',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Santiago_Bernabeu_Stadium_-_panoramio.jpg/960px-Santiago_Bernabeu_Stadium_-_panoramio.jpg',
-        imageCaption: 'ملعب سانتياغو برنابيو — معقل ملوك عصبة الأبطال',
-        imageEmoji: '🏆',
-        imageKeyword: 'Real Madrid CF',
-        imageGradient: 'from-indigo-950 via-blue-900 to-slate-900'
-      },
-      {
-        q: 'شكون هو اللعاب المغربي اللي سجل هدف الرأسية الخيالي ضد البرتغال فـ ربع نهائي كأس العالم 2022؟',
-        options: ['حكيم زياش', 'يوسف النصيري', 'سفيان بوفال', 'أشرف حكيمي'],
-        a: 1,
-        wikiTitle: 'Youssef_En-Nesyri',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Youssef_En-Nesyri_2022.jpg/800px-Youssef_En-Nesyri_2022.jpg',
-        imageCaption: 'المهاجم المغربي يوسف النصيري (ارتقاء 2.78 متر)',
-        imageEmoji: '⚽',
-        imageKeyword: 'Youssef En-Nesyri',
-        imageGradient: 'from-rose-900 via-red-950 to-slate-900'
-      },
-      {
-        q: 'شنو كيتسمى الديربي الشهير اللي كيجمع بين الوداد (WAC) والرجاء (RCA) فـ مركب محمد الخامس؟',
-        options: ['ديربي الشمال', 'ديربي كازابلانكا (البيضاء)', 'كلاسيكو العاصمة', 'ديربي فاس'],
-        a: 1,
-        wikiTitle: 'Casablanca_derby',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Stade_Mohammed_V_Casablanca.jpg/960px-Stade_Mohammed_V_Casablanca.jpg',
-        imageCaption: 'مركب محمد الخامس (دونور) — مسرح ديربي كازابلانكا',
-        imageEmoji: '🔥',
-        imageKeyword: 'Casablanca derby',
-        imageGradient: 'from-red-900 via-emerald-950 to-slate-900'
-      },
-      {
-        q: 'أشمن دول غادي ينظمو كأس العالم 2030 بشكل مشترك مع المغرب؟',
-        options: ['فرنسا وإيطاليا', 'إسبانيا والبرتغال', 'ألمانيا وهولندا', 'البرازيل والأرجنتين'],
-        a: 1,
-        wikiTitle: '2030_FIFA_World_Cup',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/2030_FIFA_World_Cup_hosts.svg/960px-2030_FIFA_World_Cup_hosts.svg.png',
-        imageCaption: 'خريطة الدول المنظمة لكأس العالم 2030 مع المغرب',
-        imageEmoji: '🌍',
-        imageKeyword: '2030 FIFA World Cup',
-        imageGradient: 'from-emerald-900 via-amber-900 to-slate-900'
-      },
-      {
-        q: 'شكون هو اللعاب اللي رابح أكبر عدد ديال الكرات الذهبية (Ballon d’Or) فالتاريخ بـ 8 ديال الكرات؟',
-        options: ['Cristiano Ronaldo', 'Lionel Messi', 'Zinedine Zidane', 'Ronaldinho'],
-        a: 1,
-        wikiTitle: 'Lionel_Messi',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Lionel-Messi-Argentina-2022-FIFA-World-Cup_%28cropped%29.jpg/800px-Lionel-Messi-Argentina-2022-FIFA-World-Cup_%28cropped%29.jpg',
-        imageCaption: 'ليونيل ميسي — صاحب 8 كرات ذهبية',
-        imageEmoji: '🥇',
-        imageKeyword: 'Lionel Messi',
+        wikiTitle: 'Pastilla',
+        imageUrl: '',
+        imageCaption: 'البسطيلة المغربية الأصيلة بالورقة المقرمشة',
+        imageEmoji: '🥧',
+        imageKeyword: 'Pastilla',
         imageGradient: 'from-amber-900 via-yellow-950 to-slate-900'
       },
       {
-        q: 'شكون هو الظهير الأيمن المغربي اللي سجل البانينكا الشهيرة ضد إسبانيا فـ ثمن نهائي مونديال 2022؟',
-        options: ['نصير مزراوي', 'أشرف حكيمي', 'بدر بانون', 'رومان سايس'],
+        q: 'شنو سميت الحلوى المغربية العريقة اللي أصلها من مدينة آسفي وكتصاوب باللوز والزبدة والبيض وكتطيب على شكل قوقعة؟',
+        options: ['الكعك المسفيوي أو قريشلات آسفي', 'الشباكية المخرقة', 'الفقاص البلدي بالنافع', 'غريبة البهلة'],
+        a: 0,
+        wikiTitle: 'Moroccan_cuisine',
+        imageUrl: '',
+        imageCaption: 'الحلويات المغربية التقليدية العريقة',
+        imageEmoji: '🍪',
+        imageKeyword: 'Moroccan cuisine',
+        imageGradient: 'from-orange-900 via-amber-900 to-slate-900'
+      },
+      {
+        q: 'فـ منطقة سوس وتافراوت، شنو سميت العجين التقليدي اللي كيتحضر من اللوز محمر ومطحون مع زيت أركان والعسل الحر؟',
+        options: ['أملو (Amlou)', 'الزميطة', 'سلو (السفوف)', 'بركوكش'],
+        a: 0,
+        wikiTitle: 'Amlou',
+        imageUrl: '',
+        imageCaption: 'أملو السوسي الأصيل بزيت أركان واللوز والعسل',
+        imageEmoji: '🍯',
+        imageKeyword: 'Amlou',
+        imageGradient: 'from-yellow-900 via-amber-950 to-slate-900'
+      },
+      {
+        q: 'فاش كنطيبو "المروزية" المغربية فـ عيد الكبير، شنو هو المكون السري اللي كيخلي اللحم يتعسل وما يخسرش ليه المذاق واخا يبقى أيام؟',
+        options: ['العسل والزبيب مع راس الحانوت والسمن وبلا بصلة ولا مطيشة فـ اللخر', 'الحليب والفرماج محكوك', 'مطيشة الحك والبطاطا', 'الخل الأبيض والحامض'],
+        a: 0,
+        wikiTitle: 'Mrouzia',
+        imageUrl: '',
+        imageCaption: 'طبق المروزية المغربية المعسلة بالزبيب واللوز',
+        imageEmoji: '🍖',
+        imageKeyword: 'Mrouzia',
+        imageGradient: 'from-rose-950 via-amber-950 to-slate-900'
+      },
+      {
+        q: 'شنو سميت الشوربة التقليدية اللي معروفة بيها مدينة وجدة والشرق فـ رمضان وكتصاوب بـ تشيشة الشعير (البلبولة) والزعتر؟',
+        options: ['البيصارة الجبلية', 'الحريرة الوجدية بالتشيشة أو الكرانتيكا', 'تشيشة الزعتر والكمون الشرقية', 'الرفيسة العمية'],
+        a: 2,
+        wikiTitle: 'Harira',
+        imageUrl: '',
+        imageCaption: 'زلافة الشوربة والحريرة المغربية السخونة',
+        imageEmoji: '🥣',
+        imageKeyword: 'Harira',
+        imageGradient: 'from-red-950 via-orange-900 to-slate-900'
+      },
+      {
+        q: 'شنو هي "الخميرة البلدية" اللي كانو جدودنا كيعجنو بيها الخبز المغربي وكيفاش كانت كتربّى فـ الأول؟',
+        options: ['دقيق القمح الكامل مع الماء والتمر أو اللبن كيتخمر طبيعياً بلا خميرة كيماوية', 'خميرة الحلويات الحمراء مع السكر كلاصي', 'البيكاربونات مع الخل والملحة', 'النشا مع الحليب سخون'],
+        a: 0,
+        wikiTitle: 'Sourdough',
+        imageUrl: '',
+        imageCaption: 'الخبز البلدي المغربي بالخميرة البلدية الصحية',
+        imageEmoji: '🍞',
+        imageKeyword: 'Moroccan bread',
+        imageGradient: 'from-stone-900 via-amber-950 to-slate-900'
+      }
+    ]
+  },
+  cars: {
+    title: '🏎️ ماركات الطوموبيلات وعالم السيارات',
+    badge: 'الطوموبيلات',
+    category: '🌍 عالم وتحديات',
+    questions: [
+      {
+        q: 'أشمن شركة طوموبيلات إيطالية فاخرة الشعار ديالها فيه "ثور هائج" (Raging Bull) حيت مؤسسها Ferruccio كان برج الثور؟',
+        options: ['Ferrari', 'Lamborghini', 'Maserati', 'Alfa Romeo'],
         a: 1,
-        wikiTitle: 'Achraf_Hakimi',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Achraf_Hakimi_2022.jpg/800px-Achraf_Hakimi_2022.jpg',
-        imageCaption: 'النجم المغربي أشرف حكيمي',
-        imageEmoji: '🐧',
-        imageKeyword: 'Achraf Hakimi',
-        imageGradient: 'from-emerald-950 via-red-950 to-slate-900'
+        wikiTitle: 'Lamborghini',
+        imageUrl: '',
+        imageCaption: 'سيارة خارقة بشعار الثور الإيطالي الشهير',
+        imageEmoji: '🐂',
+        imageKeyword: 'Lamborghini',
+        imageGradient: 'from-amber-900 via-yellow-950 to-slate-950'
+      },
+      {
+        q: 'الألوان الأبيض والأزرق المربعات فـ اللوغو ديال BMW شنو كيمثلو فـ الحقيقة التاريخية؟',
+        options: ['مروحة طائرة فـ السما', 'ألوان راية إقليم بافاريا الألماني (Bavaria)', 'موج البحر المتوسط', 'حلبة سباق فورمولا 1'],
+        a: 1,
+        wikiTitle: 'BMW',
+        imageUrl: '',
+        imageCaption: 'علامة BMW البافارية الشهيرة',
+        imageEmoji: '🛞',
+        imageKeyword: 'BMW',
+        imageGradient: 'from-blue-950 via-sky-900 to-slate-950'
+      },
+      {
+        q: 'أشمن طوموبيل تقليدية أسطورية فالمغرب كيتسمى الموديل ديالها "240D" و"الكرافس" ومعروفة بالصح فـ الطاكسيات الكبار القدام؟',
+        options: ['Mercedes-Benz W123', 'Peugeot 504', 'Renault 18', 'Volkswagen Golf 2'],
+        a: 0,
+        wikiTitle: 'Mercedes-Benz_W123',
+        imageUrl: '',
+        imageCaption: 'أسطورة الطرقات المغربية — ميرسيدس 240 (W123)',
+        imageEmoji: '🚕',
+        imageKeyword: 'Mercedes-Benz W123',
+        imageGradient: 'from-emerald-950 via-teal-900 to-slate-950'
+      },
+      {
+        q: 'الـ 4 ديال الحلقات المتداخلة فـ شعار شركة Audi الألمانية شنو كيعنيو؟',
+        options: ['4 ديال الرويض كيدورو (Quattro)', 'اندماج 4 ديال شركات السيارات القدام فـ سنة 1932 (Auto Union)', '4 ديال الألقاب العالمية فـ السباق', '4 ديال الإخوة لي أسسو الشركة'],
+        a: 1,
+        wikiTitle: 'Audi',
+        imageUrl: '',
+        imageCaption: 'شعار الحلقات الأربعة ديال شركة Audi',
+        imageEmoji: '⭕',
+        imageKeyword: 'Audi',
+        imageGradient: 'from-slate-900 via-zinc-900 to-indigo-950'
+      },
+      {
+        q: 'أشمن طوموبيل كتيتصنع فـ مصنع SOMACA بالدار البيضاء ومصنع طنجة ولات هي الأكثر مبيعاً فالمغرب وفأوروبا لسنوات؟',
+        options: ['Dacia Sandero', 'Hyundai Tucson', 'Toyota Yaris', 'Ford Fiesta'],
+        a: 0,
+        wikiTitle: 'Dacia_Sandero',
+        imageUrl: '',
+        imageCaption: 'طوموبيل Dacia Sandero المصنعة فـ المغرب',
+        imageEmoji: '🚗',
+        imageKeyword: 'Dacia Sandero',
+        imageGradient: 'from-indigo-950 via-blue-900 to-slate-950'
+      },
+      {
+        q: 'شكون هي الشركة الأم (المالكة) ديال ماركة السيارات الخارقة Bugatti و Porsche و Bentley؟',
+        options: ['مجموعة Volkswagen الألمانية', 'مجموعة Stellantis', 'شركة General Motors', 'شركة Toyota'],
+        a: 0,
+        wikiTitle: 'Bugatti_Chiron',
+        imageUrl: '',
+        imageCaption: 'الوحش الهندسي Bugatti Chiron',
+        imageEmoji: '🚀',
+        imageKeyword: 'Bugatti Chiron',
+        imageGradient: 'from-blue-950 via-indigo-950 to-slate-950'
+      },
+      {
+        q: 'شنو كتعني حروف "AMG" الشهيرة فـ الطوموبيلات الرياضية ديال Mercedes-Benz؟',
+        options: ['Auto Motor Germany', 'الألقاب ديال المهندسين المؤسسين (Aufrecht & Melcher) والمدينة (Großaspach)', 'Advanced Mechanic Gear', 'Aero Motion GT'],
+        a: 1,
+        wikiTitle: 'Mercedes-AMG',
+        imageUrl: '',
+        imageCaption: 'فرع الأداء الرياضي العالي Mercedes-AMG',
+        imageEmoji: '🏁',
+        imageKeyword: 'Mercedes-AMG',
+        imageGradient: 'from-zinc-900 via-red-950 to-slate-950'
+      },
+      {
+        q: 'فـ عالم محركات الـ JDM اليابانية، أشمن طوموبيل أسطورية ديال Toyota كان فيها المحرك الشهير "2JZ-GTE"؟',
+        options: ['Toyota Supra MK4 (A80)', 'Nissan Skyline GT-R R34', 'Mazda RX-7', 'Honda NSX'],
+        a: 0,
+        wikiTitle: 'Toyota_Supra',
+        imageUrl: '',
+        imageCaption: 'أسطورة الـ JDM اليابانية — Toyota Supra MK4',
+        imageEmoji: '🔥',
+        imageKeyword: 'Toyota Supra',
+        imageGradient: 'from-orange-950 via-red-900 to-slate-950'
       }
     ]
   },
   general: {
-    title: '🌍 معلومات عامة وتحدي الذكاء بالدارجة',
+    title: '🧠 ثقافة عامة وتحدي العباقرة بالدارجة',
     badge: 'ثقافة عامة',
+    category: '🌍 عالم وتحديات',
     questions: [
       {
-        q: 'أشمن كوكب فـ المجموعة الشمسية كيتسمى "الكوكب الأحمر"؟',
-        options: ['الزهرة (Venus)', 'المريخ (Mars)', 'المشتري (Jupiter)', 'زحل (Saturn)'],
-        a: 1,
-        wikiTitle: 'Mars',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/OSIRIS_Mars_true_color.jpg/800px-OSIRIS_Mars_true_color.jpg',
-        imageCaption: 'صورة حقيقية لكوكب المريخ (الكوكب الأحمر) من الفضاء',
-        imageEmoji: '🪐',
-        imageKeyword: 'Mars',
-        imageGradient: 'from-orange-950 via-red-900 to-slate-950'
+        q: 'شنو هي الدولة الوحيدة فالعالم اللي الراية (العلم) ديالها ماشي مستطيلة وماشي مربعة، بل على شكل جوج مثلثات؟',
+        options: ['النيبال (Nepal)', 'بوتان (Bhutan)', 'سويسرا', 'الفاتيكان'],
+        a: 0,
+        wikiTitle: 'Flag_of_Nepal',
+        imageUrl: '',
+        imageCaption: 'العلم الفريد ديال دولة النيبال فـ جبال الهيمالايا',
+        imageEmoji: '🇳🇵',
+        imageKeyword: 'Flag of Nepal',
+        imageGradient: 'from-rose-950 via-blue-950 to-slate-950'
       },
       {
-        q: 'شحال من قلب عند الأخطبوط العملاق (Octopus)؟',
-        options: ['قلب واحد (1)', 'جوج قلوب (2)', 'ثلاثة ديال القلوب (3)', 'أربعة ديال القلوب (4)'],
-        a: 2,
+        q: 'أشمن عنصر كيميائي هو الوحيد من بين المعادن (Metals) اللي كيكون سائل فـ درجة حرارة الغرفة العادية؟',
+        options: ['الزئبق (Mercury - Hg)', 'الرصاص (Lead)', 'التيتانيوم', 'الليثيوم'],
+        a: 0,
+        wikiTitle: 'Mercury_(element)',
+        imageUrl: '',
+        imageCaption: 'معدن الزئبق الفضي السائل (Hg)',
+        imageEmoji: '🧪',
+        imageKeyword: 'Mercury element',
+        imageGradient: 'from-slate-800 via-cyan-950 to-slate-950'
+      },
+      {
+        q: 'فـ جسم الإنسان، شنو هو العضو الداخلي الوحيد اللي عندو القدرة يعاود ينبث ويكبر كامل وخا تحيد منو حتى لـ 70%؟',
+        options: ['الكبدة (Liver)', 'الكلوة (Kidney)', 'الطحال', 'الرئة'],
+        a: 0,
+        wikiTitle: 'Liver',
+        imageUrl: '',
+        imageCaption: 'معجزة تجدد خلايا الكبد فـ جسم الإنسان',
+        imageEmoji: '🧬',
+        imageKeyword: 'Liver',
+        imageGradient: 'from-rose-950 via-purple-950 to-slate-950'
+      },
+      {
+        q: 'أشمن محيط فـ الكرة الأرضية كاينة فيه أعمق نقطة مكتشفة (خندق ماريانا - Mariana Trench) لي كتوصل لـ 11 كيلومتر لتحت؟',
+        options: ['المحيط الهادي (Pacific Ocean)', 'المحيط الأطلسي', 'المحيط الهندي', 'المحيط المتجمد الشمالي'],
+        a: 0,
+        wikiTitle: 'Mariana_Trench',
+        imageUrl: '',
+        imageCaption: 'أعماق خندق ماريانا فـ المحيط الهادي',
+        imageEmoji: '🌊',
+        imageKeyword: 'Mariana Trench',
+        imageGradient: 'from-blue-950 via-cyan-950 to-slate-950'
+      },
+      {
+        q: 'شحال من قلب عند الأخطبوط العملاق، وشنو هو اللون الحقيقي ديال الدم ديالو؟',
+        options: ['3 ديال القلوب ودمو أزرق', 'قلب واحد ودمو أحمر', 'جوج قلوب ودمو أخضر', '4 ديال القلوب ودمو أصفر'],
+        a: 0,
         wikiTitle: 'Octopus',
         imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Octopus2.jpg/960px-Octopus2.jpg',
-        imageCaption: 'الأخطبوط البحري — عندو 3 ديال القلوب ودم أزرق!',
+        imageCaption: 'الأخطبوط البحري — 3 قلوب ودم أزرق بسبب النحاس (Hemocyanin)',
         imageEmoji: '🐙',
         imageKeyword: 'Octopus',
         imageGradient: 'from-cyan-950 via-blue-900 to-slate-950'
       },
       {
-        q: 'شنو هو المعدن النفيس اللي الرمز الكيميائي ديالو فـ الجدول الدوري هو Au؟',
-        options: ['الفضة (النقرة)', 'الذهب (Gold)', 'النحاس', 'البلاتين'],
-        a: 1,
-        wikiTitle: 'Gold',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Gold-crystals.jpg/960px-Gold-crystals.jpg',
-        imageCaption: 'معدن الذهب الخالص (الرمز الكيميائي Au من Aurum)',
-        imageEmoji: '🪙',
-        imageKeyword: 'Gold',
-        imageGradient: 'from-amber-900 via-yellow-900 to-slate-950'
-      },
-      {
-        q: 'شحال تقريباً كياخد ديال الوقت الضو ديال الشمس باش يوصل لكوكب الأرض؟',
-        options: ['8 ثواني', '8 دقايق و20 ثانية', 'ساعة كاملة', '24 دقيقة'],
-        a: 1,
-        wikiTitle: 'Sun',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/The_Sun_by_the_Atmospheric_Imaging_Assembly_of_NASA%27s_Solar_Dynamics_Observatory_-_20100819.jpg/800px-The_Sun_by_the_Atmospheric_Imaging_Assembly_of_NASA%27s_Solar_Dynamics_Observatory_-_20100819.jpg',
-        imageCaption: 'الشمس — المسافة بينها وبين الأرض حوالي 150 مليون كلم',
-        imageEmoji: '☀️',
-        imageKeyword: 'Sun',
-        imageGradient: 'from-amber-950 via-orange-900 to-slate-950'
-      },
-      {
-        q: 'شنو هي أكبر قارة فالعالم من حيث المساحة وعدد السكان؟',
-        options: ['إفريقيا', 'آسيا', 'أمريكا الشمالية', 'أوروبا'],
-        a: 1,
-        wikiTitle: 'Asia',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Asia_%28orthographic_projection%29.svg/800px-Asia_%28orthographic_projection%29.svg.png',
-        imageCaption: 'خريطة قارة آسيا — أكبر قارات العالم مساحةً وسكاناً',
-        imageEmoji: '🌏',
-        imageKeyword: 'Asia',
-        imageGradient: 'from-blue-950 via-indigo-900 to-slate-950'
-      },
-      {
-        q: 'شنو هو أسرع حيوان بري كيجري فـ العالم وكتفوق السرعة ديالو 110 كلم/ساعة؟',
-        options: ['الأسد (السبع)', 'الفهد الصياد (Cheetah)', 'الغزالة', 'العود (الحصان)'],
-        a: 1,
-        wikiTitle: 'Cheetah',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/TheCheethcat.jpg/960px-TheCheethcat.jpg',
-        imageCaption: 'الفهد الصياد (Cheetah) — أسرع كائن بري على وجه الأرض',
-        imageEmoji: '🐆',
-        imageKeyword: 'Cheetah',
-        imageGradient: 'from-amber-950 via-stone-900 to-slate-950'
-      },
-      {
-        q: 'أشمن مضيق بحري كيفصل بين المغرب وإسبانيا ويربط الأطلسي بالمتوسط؟',
-        options: ['مضيق هرمز', 'مضيق جبل طارق', 'مضيق البوسفور', 'قناة السويس'],
-        a: 1,
-        wikiTitle: 'Strait_of_Gibraltar',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Strait_of_Gibraltar_seen_from_space.jpg/960px-Strait_of_Gibraltar_seen_from_space.jpg',
-        imageCaption: 'صورة فضائية لمضيق جبل طارق بين المغرب وإسبانيا',
-        imageEmoji: '🚢',
-        imageKeyword: 'Strait of Gibraltar',
-        imageGradient: 'from-sky-950 via-cyan-900 to-slate-950'
-      },
-      {
-        q: 'شكون هو الفنان الإيطالي اللي رسم اللوحة الشهيرة "الموناليزا" (La Joconde)؟',
-        options: ['Pablo Picasso', 'Leonardo da Vinci', 'Vincent van Gogh', 'Michelangelo'],
-        a: 1,
-        wikiTitle: 'Mona_Lisa',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/800px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg',
-        imageCaption: 'لوحة الموناليزا الشهيرة فـ متحف اللوفر بباريس',
-        imageEmoji: '🎨',
-        imageKeyword: 'Mona Lisa',
-        imageGradient: 'from-purple-950 via-indigo-950 to-slate-950'
-      }
-    ]
-  },
-  gaming: {
-    title: '🎮 أفلام، أنمي، و Gaming بالدارجة',
-    badge: 'Geek & Anime',
-    questions: [
-      {
-        q: 'فـ لعبة Minecraft، باش تقدر تهرس حجر الـ Obsidian خاصك على الأقل بيكس (Pickaxe) ديالاش؟',
-        options: ['ديال الحديد (Iron)', 'ديال الذهب (Gold)', 'ديال الدياموند (Diamond)', 'ديال الحجر (Stone)'],
-        a: 2,
-        wikiTitle: 'Obsidian',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Lipari-Obsidienne_%285%29.jpg/960px-Lipari-Obsidienne_%285%29.jpg',
-        imageCaption: 'حجر الأوبسيديان (Obsidian) البركاني الأسود',
-        imageEmoji: '⛏️',
-        imageKeyword: 'Obsidian',
-        imageGradient: 'from-purple-950 via-indigo-900 to-slate-950'
-      },
-      {
-        q: 'فـ أنمي One Piece، شكون اللي عطى لـ Luffy الشابو ديال القش (Straw Hat) فـ الصغر؟',
-        options: ['Zoro', 'Shanks', 'Ace', 'Garp'],
-        a: 1,
-        wikiTitle: 'One_Piece',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Straw_hat_with_black_ribbon.jpg/960px-Straw_hat_with_black_ribbon.jpg',
-        imageCaption: 'قبعة القش الشهيرة فـ أنمي One Piece',
-        imageEmoji: '🏴‍☠️',
-        imageKeyword: 'One Piece',
-        imageGradient: 'from-rose-950 via-amber-950 to-slate-950'
-      },
-      {
-        q: 'شنو سميت جهاز الألعاب المنزلي الشهير ديال شركة Sony اللي خرج سنة 2020 (الجيل الخامس)؟',
-        options: ['PlayStation 5 (PS5)', 'Xbox Series X', 'Nintendo Switch', 'Steam Deck'],
+        q: 'أشمن عالم فيزياء صاوب نظرية "النسبية العامة" ولكن ربح جائزة نوبل فـ 1921 على "التأثير الكهروضوئي" ماشي على النسبية؟',
+        options: ['Albert Einstein', 'Nikola Tesla', 'Isaac Newton', 'Max Planck'],
         a: 0,
-        wikiTitle: 'PlayStation_5',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/PlayStation_5_and_DualSense_with_transparent_background.png/960px-PlayStation_5_and_DualSense_with_transparent_background.png',
-        imageCaption: 'جهاز PlayStation 5 مع يد التحكم DualSense',
-        imageEmoji: '🎮',
-        imageKeyword: 'PlayStation 5',
-        imageGradient: 'from-indigo-950 via-blue-950 to-slate-950'
-      },
-      {
-        q: 'شكون هو البوكيمون الأصفر الشهير ديال الكهرباء اللي هو الشخصية الرئيسية مع Ash فـ أنمي Pokémon؟',
-        options: ['Charizard', 'Pikachu', 'Bulbasaur', 'Squirtle'],
-        a: 1,
-        wikiTitle: 'Pikachu',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/International_Pok%C3%A9mon_logo.svg/960px-International_Pok%C3%A9mon_logo.svg.png',
-        imageCaption: 'عالم البوكيمون الشهير — Pokémon',
-        imageEmoji: '⚡',
-        imageKeyword: 'Pikachu',
-        imageGradient: 'from-amber-900 via-yellow-900 to-slate-950'
-      },
-      {
-        q: 'أشمن مدينة فـ ولاية كاليفورنيا مستوحاة منها مدينة Los Santos فـ لعبة GTA V و GTA San Andreas؟',
-        options: ['Miami', 'Los Angeles', 'New York', 'Chicago'],
-        a: 1,
-        wikiTitle: 'Los_Angeles',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/20190616154621%21Echo_Park_Lake_with_Downtown_Los_Angeles_Skyline.jpg/960px-20190616154621%21Echo_Park_Lake_with_Downtown_Los_Angeles_Skyline.jpg',
-        imageCaption: 'مدينة لوس أنجلوس — اللي مستوحاة منها Los Santos فـ GTA',
-        imageEmoji: '🌴',
-        imageKeyword: 'Los Angeles',
-        imageGradient: 'from-orange-950 via-fuchsia-950 to-slate-950'
-      },
-      {
-        q: 'فـ سلسلة أفلام Harry Potter، شنو هو الحيوان ديال البريد اللي كيوصل الرسائل لـ هاري (Hedwig)؟',
-        options: ['بومة بيضاء (Snowy Owl)', 'غراب', 'صقر', 'قطة'],
-        a: 0,
-        wikiTitle: 'Snowy_owl',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Snowy_Owl_%28240866707%29.jpeg/960px-Snowy_Owl_%28240866707%29.jpeg',
-        imageCaption: 'البومة الثلجية البيضاء (Hedwig) فـ عالم هاري بوتر',
-        imageEmoji: '🦉',
-        imageKeyword: 'Snowy owl',
+        wikiTitle: 'Albert_Einstein',
+        imageUrl: '',
+        imageCaption: 'العالم الفيزيائي ألبرت أينشتاين',
+        imageEmoji: '⚛️',
+        imageKeyword: 'Albert Einstein',
         imageGradient: 'from-indigo-950 via-purple-950 to-slate-950'
       },
       {
-        q: 'شكون هو البطل الخارق ديال Marvel اللي كيلبس بدلة حديدية متطورة واسمو الحقيقي Tony Stark؟',
-        options: ['Captain America', 'Iron Man', 'Thor', 'Spider-Man'],
-        a: 1,
-        wikiTitle: 'Iron_Man',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Iron_Man_bleeding_edge.jpg/800px-Iron_Man_bleeding_edge.jpg',
-        imageCaption: 'البطل الخارق Iron Man (توني ستارك)',
-        imageEmoji: '🤖',
-        imageKeyword: 'Iron Man',
-        imageGradient: 'from-red-950 via-amber-950 to-slate-950'
+        q: 'أشمن كوكب فـ المجموعة الشمسية النهار الواحد فيه (دورة حول نفسو) أطول من العام ديالو (دورة حول الشمس)؟',
+        options: ['كوكب الزهرة (Venus)', 'كوكب المريخ (Mars)', 'كوكب عطارد (Mercury)', 'كوكب نبتون'],
+        a: 0,
+        wikiTitle: 'Venus',
+        imageUrl: '',
+        imageCaption: 'كوكب الزهرة (Venus) اللي كيدور بالعكس وببطء شديد',
+        imageEmoji: '🪐',
+        imageKeyword: 'Venus',
+        imageGradient: 'from-amber-950 via-orange-950 to-slate-950'
       },
       {
-        q: 'شنو هي أكثر لعبة مبيعاً فـ تاريخ ألعاب الفيديو كاملة ديال البناء بـ المكعبات (Blocks)؟',
-        options: ['Tetris', 'Minecraft', 'FIFA', 'Fortnite'],
-        a: 1,
-        wikiTitle: 'Minecraft',
-        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Minecraft_logo.svg/960px-Minecraft_logo.svg.png',
-        imageCaption: 'لعبة Minecraft الأسطورية — أكثر من 300 مليون نسخة مباعة',
-        imageEmoji: '🧱',
-        imageKeyword: 'Minecraft',
+        q: 'أشمن مدينة تاريخية فـ العالم هي الوحيدة اللي مقسومة جغرافياً بين جوج قارات (أوروبا وآسيا) وكيفرقها مضيق البوسفور؟',
+        options: ['إسطنبول (Istanbul)', 'أثينا', 'القاهرة', 'طنجة'],
+        a: 0,
+        wikiTitle: 'Istanbul',
+        imageUrl: '',
+        imageCaption: 'مضيق البوسفور فـ مدينة إسطنبول بين أوروبا وآسيا',
+        imageEmoji: '🌉',
+        imageKeyword: 'Istanbul',
+        imageGradient: 'from-sky-950 via-indigo-950 to-slate-950'
+      }
+    ]
+  },
+  rap: {
+    title: '🎤 روابا د المغرب وتراكات الراب المغربي',
+    badge: 'الراب المغربي',
+    category: '🇲🇦 تراث ومغربيات',
+    questions: [
+      {
+        q: 'أشمن رابور مغربي خرج الألبوم الشهير "عربي" (Arabi) فـ 2023 ودار بيه أرقام قياسية فـ Spotify العالم العربي؟',
+        options: ['ElGrandeToto', 'Draganov', 'Stormy', 'Kouz1'],
+        a: 0,
+        wikiTitle: 'ElGrandeToto',
+        imageUrl: '',
+        imageCaption: 'نجم الراب المغربي والعالمي ElGrandeToto',
+        imageEmoji: '🎤',
+        imageKeyword: 'ElGrandeToto',
+        imageGradient: 'from-purple-950 via-indigo-950 to-slate-950'
+      },
+      {
+        q: 'شنو سميت الكروب الأسطوري ديال الراب المراكشي اللي تأسس فـ 1996 وكان فيه Fnaïre ولا الكروب الفاسي H-Kayne؟ شكون صاحب تراك "Issawa Style"؟',
+        options: ['H-Kayne (من مكناس)', 'Fnaïre (من مراكش)', 'Zanka Flow (من طنجة)', 'Casa Crew (من كازا)'],
+        a: 0,
+        wikiTitle: 'H-Kayne',
+        imageUrl: '',
+        imageCaption: 'رواد الهيب هوب المغربي — مجموعة H-Kayne المكناسية',
+        imageEmoji: '🎧',
+        imageKeyword: 'H-Kayne',
+        imageGradient: 'from-emerald-950 via-teal-900 to-slate-950'
+      },
+      {
+        q: 'أشمن رابور مغربي ولد مدينة وجدة معروف بأنه هو اللي كيدير الـ Prod (الألحان) والغناء فـ نفس الوقت وخرج ألبوم "ألوان" (Alwane)؟',
+        options: ['Draganov (عدنان)', 'Small X', 'Madd', 'Shobee'],
+        a: 0,
+        wikiTitle: 'Moroccan_hip_hop',
+        imageUrl: '',
+        imageCaption: 'الرابور والمنتج الموسيقي المغربي Draganov',
+        imageEmoji: '🎹',
+        imageKeyword: 'Hip hop music',
+        imageGradient: 'from-rose-950 via-fuchsia-950 to-slate-950'
+      },
+      {
+        q: 'شكون هوما الجوج روابا المغاربة اللي كانو مشكلين الثنائي الشهير "Shayfeen" من مدينة آسفي قبل ما يكمل كل واحد بوحدو؟',
+        options: ['Small X و Shobee', 'Ouenza و Guzman', '7liwa و Lferda', 'Khtek و Pause Flow'],
+        a: 0,
+        wikiTitle: 'Shayfeen',
+        imageUrl: '',
+        imageCaption: 'الثنائي الشهير Shayfeen (Small X & Shobee)',
+        imageEmoji: '🔥',
+        imageKeyword: 'Rap music',
+        imageGradient: 'from-amber-950 via-red-950 to-slate-950'
+      },
+      {
+        q: 'شكون هو الرابور المغربي الفاسي المعروف بأسلوب الراب الشعري العميق وبالملثم فـ البدايات ديالو ومن أشهر تراكاتو "170 Kg" و"الصولدي"؟',
+        options: ['Lmorphine (المورفين)', 'Pause Flow', 'Nessyou', 'Muslim'],
+        a: 0,
+        wikiTitle: 'Rapping',
+        imageUrl: '',
+        imageCaption: 'الراب الفلسفي والكتابة العميقة فـ الراب المغربي',
+        imageEmoji: '🖋️',
+        imageKeyword: 'Microphone',
+        imageGradient: 'from-stone-900 via-zinc-900 to-slate-950'
+      },
+      {
+        q: 'أشمن رابور طنجاوي من الجيل الأول ديال الـ Hardcore Rap فـ المغرب خرج التراك الخالد "الرسالة" و"متمرد"؟',
+        options: ['Muslim (مسلم)', 'L3arbé', 'Rofix', 'Komy'],
+        a: 0,
+        wikiTitle: 'Muslim_(rapper)',
+        imageUrl: '',
+        imageCaption: 'الرابور الطنجاوي مسلم (Muslim)',
+        imageEmoji: '🦅',
+        imageKeyword: 'Muslim rapper',
+        imageGradient: 'from-red-950 via-slate-900 to-slate-950'
+      },
+      {
+        q: 'شنو سميت التراك الشهير ديال Don Bigg اللي خرج فـ ألبوم "مغاربة تال الموت" (2006) ودار ثورة فـ تاريخ الراب المغربي؟',
+        options: ['الخوف (Al Khouf) و مغاربة تال الموت', 'بلاتي', 'كازابلانكا', 'تسونامي'],
+        a: 0,
+        wikiTitle: 'Don_Bigg',
+        imageUrl: '',
+        imageCaption: 'الرابور المغربي Don Bigg — ألبوم مغاربة تال الموت',
+        imageEmoji: '👑',
+        imageKeyword: 'Don Bigg',
+        imageGradient: 'from-indigo-950 via-slate-900 to-amber-950'
+      },
+      {
+        q: 'شكون هو الرابور المغربي صاحب التراك الضارب "Africain" و "عمرها ما غادي تصفى" واللي تميز بـ ستايل Afro-Trap؟',
+        options: ['Stormy', 'Tagne', 'Kouz1', 'Snor'],
+        a: 0,
+        wikiTitle: 'Trap_music',
+        imageUrl: '',
+        imageCaption: 'موجة الـ Afro-Trap والراب العصري فـ المغرب',
+        imageEmoji: '⚡',
+        imageKeyword: 'Concert',
+        imageGradient: 'from-violet-950 via-fuchsia-950 to-slate-950'
+      }
+    ]
+  },
+  makeup: {
+    title: '💄 الماكياج وماركات الـ Makeup العالمية',
+    badge: 'Makeup & Beauty',
+    category: '🌍 عالم وتحديات',
+    questions: [
+      {
+        q: 'شكون هي المغنية والنجمة العالمية اللي أسست ماركة الماكياج الشهيرة "Fenty Beauty" ودارت ثورة بـ 40 درجة ديال الـ Foundation من أول نهار؟',
+        options: ['Rihanna (ريهانا)', 'Selena Gomez', 'Kylie Jenner', 'Ariana Grande'],
+        a: 0,
+        wikiTitle: 'Fenty_Beauty',
+        imageUrl: '',
+        imageCaption: 'ماركة Fenty Beauty العالمية ديال النجمة Rihanna',
+        imageEmoji: '💄',
+        imageKeyword: 'Rihanna',
+        imageGradient: 'from-pink-950 via-rose-900 to-slate-950'
+      },
+      {
+        q: 'ماركة "Rare Beauty" اللي معروفة بزاف بـ الـ Liquid Blush (Soft Pinch) اللي كيدوم نهار كامل، شكون هي النجمة المؤسسة ديالها؟',
+        options: ['Selena Gomez (سيلينا غوميز)', 'Hailey Bieber', 'Lady Gaga', 'Kim Kardashian'],
+        a: 0,
+        wikiTitle: 'Rare_Beauty',
+        imageUrl: '',
+        imageCaption: 'ماركة Rare Beauty ديال Selena Gomez',
+        imageEmoji: '🌸',
+        imageKeyword: 'Selena Gomez',
+        imageGradient: 'from-rose-900 via-pink-950 to-slate-950'
+      },
+      {
+        q: 'فـ ترتيب خطوات الـ Makeup الاحترافي، شنو الفرق بين الـ "Primer" والـ "Setting Spray"؟',
+        options: ['الـ Primer كيدار قبل الفوندوتان باش يهيئ البشرة ويسد المسام، والـ Setting Spray كيدار فـ اللخر باش يثبت الماكياج', 'بجوجهم كيدارو قبل غسيل الوجه', 'الـ Primer كيحيد الماكياج والـ Setting Spray هو الماسكارا', 'الـ Setting Spray كيدار للشفاه فقط'],
+        a: 0,
+        wikiTitle: 'Cosmetics',
+        imageUrl: '',
+        imageCaption: 'أدوات ومستحضرات التجميل الاحترافية',
+        imageEmoji: '✨',
+        imageKeyword: 'Cosmetics',
+        imageGradient: 'from-fuchsia-950 via-purple-950 to-slate-950'
+      },
+      {
+        q: 'شنو سميت درجة اللون (Shade) الأسطورية ديال الـ Matte Lipstick من ماركة MAC اللي لونو أحمر كلاسيكي وكيجي مع جميع ألوان البشرة؟',
+        options: ['Ruby Woo', 'Pillow Talk', 'Black Honey', 'Orgasm'],
+        a: 0,
+        wikiTitle: 'MAC_Cosmetics',
+        imageUrl: '',
+        imageCaption: 'أحمر الشفاه الأيقوني Ruby Woo من MAC Cosmetics',
+        imageEmoji: '💋',
+        imageKeyword: 'Lipstick',
+        imageGradient: 'from-red-950 via-rose-950 to-slate-950'
+      },
+      {
+        q: 'أشمن ماركة تجميل عالمية مشهورة بمجموعة "Pillow Talk" وأسستها خبيرة التجميل البريطانية الشهيرة للمشاهير؟',
+        options: ['Charlotte Tilbury', 'Huda Beauty', 'Anastasia Beverly Hills', 'NARS'],
+        a: 0,
+        wikiTitle: 'Charlotte_Tilbury',
+        imageUrl: '',
+        imageCaption: 'مجموعة Pillow Talk الشهيرة من Charlotte Tilbury',
+        imageEmoji: '👑',
+        imageKeyword: 'Make-up artist',
+        imageGradient: 'from-amber-950 via-rose-950 to-slate-950'
+      },
+      {
+        q: 'شنو هو الترتيب الصحيح باش ما يتكورش الماكياج (Cakey Makeup) مللي كتستعملي منتوجات الكريم (Cream) ومنتوجات البودرة (Powder)؟',
+        options: ['ديما السوائل والكريمات هما اللولين (Foundation/Cream Blush) عاد كنتبثو بالبودرة الفوق', 'كنديرو البودرة هي اللولة عاد الفوندوتان السائل فوقها', 'كنخلطو الماسكارا مع البودرة', 'ما كاين حتى فرق فـ الترتيب'],
+        a: 0,
+        wikiTitle: 'Foundation_(cosmetics)',
+        imageUrl: '',
+        imageCaption: 'تقنيات دمج الـ Foundation والـ Contour الاحترافية',
+        imageEmoji: '🖌️',
+        imageKeyword: 'Foundation cosmetics',
+        imageGradient: 'from-orange-950 via-pink-950 to-slate-950'
+      },
+      {
+        q: 'شنو هو المستحضر التقليدي المغربي الطبيعي 100% اللي كيتصاوب من أوراق شقائق النعمان (بلعمان) وقشور الرمان فـ فاس وكيعطي لون أحمر طبيعي للشفاه والخدود؟',
+        options: ['العكر الفاسي الحر', 'الكحل البلدي بالأثمد', 'الغاسول المسقي', 'الودعة'],
+        a: 0,
+        wikiTitle: 'Corn_poppy',
+        imageUrl: '',
+        imageCaption: 'العكر الفاسي المغربي الأصيل المستخلص من زهور بلعمان',
+        imageEmoji: '🌺',
+        imageKeyword: 'Poppy flower',
+        imageGradient: 'from-red-900 via-rose-950 to-slate-950'
+      },
+      {
+        q: 'إلا بغيتي تغطي الهالات السوداء تحت العين (Dark Circles) اللي مائل لونها للأزرق/البنفسجي قبل الـ Concealer، أشمن لون ديال الـ Color Corrector خاصك تستعملي؟',
+        options: ['اللون الخوخي أو البرتقالي (Peach / Orange Corrector)', 'اللون الأخضر (Green Corrector)', 'اللون الأزرق', 'اللون الأبيض الثلجي'],
+        a: 0,
+        wikiTitle: 'Concealer',
+        imageUrl: '',
+        imageCaption: 'عجلة الألوان لتصحيح عيوب البشرة (Color Correcting)',
+        imageEmoji: '🎨',
+        imageKeyword: 'Cosmetics brush',
+        imageGradient: 'from-amber-900 via-fuchsia-950 to-slate-950'
+      }
+    ]
+  },
+  players: {
+    title: '🦁 اللعابا د المغرب بالتصاور (تحدي الأسود)',
+    badge: 'أسود الأطلس',
+    category: '🇲🇦 تراث ومغربيات',
+    questions: [
+      {
+        q: 'شوف الصورة: هاد المايسترو المغربي ربح الكرة الذهبية الإفريقية سنة 1998 وتألق فـ مونديال فرنسا مع المنتخب ومع فريق ديبورتيفو لاكورونيا، شكون هو؟',
+        options: ['مصطفى حجي', 'عبد الجليل هدا (كماتشو)', 'نور الدين النيبت', 'يوسف شيبو'],
+        a: 0,
+        wikiTitle: 'Mustapha_Hadji',
+        imageUrl: '',
+        imageCaption: 'أسطورة الكرة المغربية صاحب الكرة الذهبية الإفريقية 1998',
+        imageEmoji: '🦁',
+        imageKeyword: 'Mustapha Hadji',
+        imageGradient: 'from-red-900 via-emerald-900 to-slate-950'
+      },
+      {
+        q: 'هاد النجم المغربي سجل هدف تاريخي فـ أولمبياد باريس 2024 وتوج هداف البطولة بـ 8 أهداف مع المنتخب الأولمبي، شكون هو؟',
+        options: ['سفيان رحيمي', 'إلياس أخوماش', 'بلال الخنوس', 'عبد الصمد الزلزولي'],
+        a: 0,
+        wikiTitle: 'Soufiane_Rahimi',
+        imageUrl: '',
+        imageCaption: 'هداف أولمبياد باريس 2024 ونجم العين الإماراتي والرجاء سابقاً',
+        imageEmoji: '🥇',
+        imageKeyword: 'Soufiane Rahimi',
+        imageGradient: 'from-emerald-900 via-red-950 to-slate-950'
+      },
+      {
+        q: 'شكون هو هاد النجم المغربي ديال ريال مدريد اللي اختار يمثل أسود الأطلس وربح دوري أبطال أوروبا 2024؟',
+        options: ['إبراهيم دياز (Brahim Díaz)', 'حكيم زياش', 'أمين عدلي', 'إلياس بن صغير'],
+        a: 0,
+        wikiTitle: 'Brahim_Díaz',
+        imageUrl: '',
+        imageCaption: 'نجم ريال مدريد والمنتخب المغربي رقم 10',
+        imageEmoji: '👑',
+        imageKeyword: 'Brahim Díaz',
+        imageGradient: 'from-indigo-950 via-red-950 to-slate-950'
+      },
+      {
+        q: 'هاد المهاجم المغربي التاريخي كان هداف الدوري الإنجليزي (أول هدف ليه مع كريستال بالاس) ومعروف بلقب "الشماخ" فـ أرسنال وبوردو، شكون هو؟',
+        options: ['مروان الشماخ', 'يوسف حجي', 'مبارك بوصوفة', 'أسامة السعيدي'],
+        a: 0,
+        wikiTitle: 'Marouane_Chamakh',
+        imageUrl: '',
+        imageCaption: 'المهاجم المغربي الشهير فـ بوردو وأرسنال وعرين الأسود 2004',
+        imageEmoji: '⚽',
+        imageKeyword: 'Marouane Chamakh',
+        imageGradient: 'from-rose-950 via-red-900 to-slate-950'
+      },
+      {
+        q: 'شكون هو "الجنرال" وعميد المنتخب المغربي الأسطوري اللي ربح الليغا مع ديبورتيفو لاكورونيا ولعب فـ توتنهام والوداد؟',
+        options: ['نور الدين النيبت', 'طلال القرقوري', 'مهدي بنعطية', 'عبد السلام وادو'],
+        a: 0,
+        wikiTitle: 'Noureddine_Naybet',
+        imageUrl: '',
+        imageCaption: 'صخرة الدفاع المغربية التاريخية — نور الدين النيبت',
+        imageEmoji: '🛡️',
+        imageKeyword: 'Noureddine Naybet',
+        imageGradient: 'from-red-950 via-emerald-950 to-slate-950'
+      },
+      {
+        q: 'هاد المحارب ديال وسط الميدان المغربي دار مونديال أسطوري فـ قطر 2022 ولعب لـ فيورنتينا ومانشستر يونايتد وفنربخشة، شكون هو؟',
+        options: ['سفيان أمرابط', 'عز الدين أوناحي', 'سليم أملاح', 'يحيى جبران'],
+        a: 0,
+        wikiTitle: 'Sofyan_Amrabat',
+        imageUrl: '',
+        imageCaption: 'محارب خط الوسط فـ المنتخب المغربي رقم 4',
+        imageEmoji: '⚔️',
+        imageKeyword: 'Sofyan Amrabat',
+        imageGradient: 'from-emerald-950 via-teal-950 to-slate-950'
+      },
+      {
+        q: 'شكون هو الحارس المغربي العملاق صاحب الكرة الذهبية الإفريقية 1986 واللي تألق مع مايوركا الإسباني وفـ مونديال المكسيك 86؟',
+        options: ['بادو الزاكي', 'خالد فوهامي', 'نادر المياغري', 'علال بن قصو'],
+        a: 0,
+        wikiTitle: 'Ezzaki_Badou',
+        imageUrl: '',
+        imageCaption: 'أسطورة الحراسة المغربية والإفريقية — بادو الزاكي',
+        imageEmoji: '🧤',
+        imageKeyword: 'Ezzaki Badou',
+        imageGradient: 'from-amber-950 via-red-950 to-slate-950'
+      },
+      {
+        q: 'هاد اللعاب المغربي رقم 8 بهر العالم ولويس إنريكي فـ مونديال 2022 بـ المراوغات ديالو ضد إسبانيا والبرتغال، شكون هو؟',
+        options: ['عز الدين أوناحي', 'أمين حارث', 'عبد الحميد الصابيري', 'زكرياء أبو خلال'],
+        a: 0,
+        wikiTitle: 'Azzedine_Ounahi',
+        imageUrl: '',
+        imageCaption: 'مهندس خط الوسط المغربي صاحب الرقم 8 فـ مونديال قطر',
+        imageEmoji: '✨',
+        imageKeyword: 'Azzedine Ounahi',
+        imageGradient: 'from-red-900 via-emerald-950 to-slate-950'
+      }
+    ]
+  },
+  arab_capitals: {
+    title: '🕌 عواصم الدول العربية (تحدي الواعرين)',
+    badge: 'عواصم عربية',
+    category: '🌍 عالم وتحديات',
+    questions: [
+      {
+        q: 'شنو هي العاصمة الرسمية ديال دولة جزر القمر (Comoros) اللي هي دولة عربية فـ المحيط الهندي؟',
+        options: ['موروني (Moroni)', 'جيبوتي', 'مقديشو', 'نواكشوط'],
+        a: 0,
+        wikiTitle: 'Moroni,_Comoros',
+        imageUrl: '',
+        imageCaption: 'مدينة موروني الساحلية فـ جزر القمر',
+        imageEmoji: '🏝️',
+        imageKeyword: 'Moroni Comoros',
+        imageGradient: 'from-emerald-950 via-cyan-950 to-slate-950'
+      },
+      {
+        q: 'شنو هي العاصمة ديال سلطنة عُمان اللي معروفة بالعمارة البيضاء والقلعات التاريخية على بحر العرب؟',
+        options: ['مسقط (Muscat)', 'صلالة', 'المنامة', 'الدوحة'],
+        a: 0,
+        wikiTitle: 'Muscat',
+        imageUrl: '',
+        imageCaption: 'عاصمة سلطنة عُمان الساحرة على الخليج وبحر العرب',
+        imageEmoji: '🕌',
+        imageKeyword: 'Muscat',
+        imageGradient: 'from-amber-950 via-stone-900 to-slate-950'
+      },
+      {
+        q: 'شنو هي العاصمة الرسمية ديال مملكة البحرين؟',
+        options: ['المنامة (Manama)', 'المحرق', 'الشارقة', 'الكويت'],
+        a: 0,
+        wikiTitle: 'Manama',
+        imageUrl: '',
+        imageCaption: 'أبراج العاصمة البحرينية الحديثة',
+        imageEmoji: '🏙️',
+        imageKeyword: 'Manama',
+        imageGradient: 'from-red-950 via-rose-900 to-slate-950'
+      },
+      {
+        q: 'شنو هي العاصمة ديال الجمهورية الإسلامية الموريتانية (بلد المليون شاعر)؟',
+        options: ['نواكشوط (Nouakchott)', 'نواذيبو', 'شنقيط', 'أطار'],
+        a: 0,
+        wikiTitle: 'Nouakchott',
+        imageUrl: '',
+        imageCaption: 'العاصمة الموريتانية على ساحل المحيط الأطلسي',
+        imageEmoji: '🇲🇷',
+        imageKeyword: 'Nouakchott',
+        imageGradient: 'from-emerald-950 via-amber-950 to-slate-950'
+      },
+      {
+        q: 'بزاف د الناس كيغلطو وكيصحاب ليهم "دبي" هي العاصمة، شنو هي العاصمة الفيدرالية الرسمية ديال الإمارات العربية المتحدة؟',
+        options: ['أبوظبي (Abu Dhabi)', 'دبي', 'الشارقة', 'العين'],
+        a: 0,
+        wikiTitle: 'Abu_Dhabi',
+        imageUrl: '',
+        imageCaption: 'جامع الشيخ زايد وأبراج العاصمة الإماراتية',
+        imageEmoji: '🇦🇪',
+        imageKeyword: 'Abu Dhabi',
+        imageGradient: 'from-sky-950 via-indigo-950 to-slate-950'
+      },
+      {
+        q: 'شنو هي العاصمة التاريخية ديال الصومال واللي كطل مباشرة على المحيط الهندي؟',
+        options: ['مقديشو (Mogadishu)', 'هرجيسا', 'أسمرة', 'الخرطوم'],
+        a: 0,
+        wikiTitle: 'Mogadishu',
+        imageUrl: '',
+        imageCaption: 'العاصمة الصومالية العريقة على ساحل المحيط الهندي',
+        imageEmoji: '🌊',
+        imageKeyword: 'Mogadishu',
+        imageGradient: 'from-blue-950 via-sky-900 to-slate-950'
+      },
+      {
+        q: 'أشمن عاصمة عربية كيتلاقى فيها "النيل الأبيض" و"النيل الأزرق" فـ بلاصة سميتها "المقرن"؟',
+        options: ['الخرطوم (عاصمة السودان)', 'القاهرة (عاصمة مصر)', 'عمان (عاصمة الأردن)', 'بغداد (عاصمة العراق)'],
+        a: 0,
+        wikiTitle: 'Khartoum',
+        imageUrl: '',
+        imageCaption: 'ملتقى النيلين الأبيض والأزرق فـ السودان',
+        imageEmoji: '🚤',
+        imageKeyword: 'Khartoum',
+        imageGradient: 'from-cyan-950 via-blue-950 to-slate-950'
+      },
+      {
+        q: 'شنو هي العاصمة ديال اليمن اللي مبنية فوق الجبال على علو 2200 متر ومصنفة فـ التراث العالمي بـ معمارها الفريد؟',
+        options: ['صنعاء (Sanaa)', 'عدن', 'تعز', 'حضرموت'],
+        a: 0,
+        wikiTitle: 'Sanaa',
+        imageUrl: '',
+        imageCaption: 'المعمار التاريخي الفريد ديال مدينة صنعاء القديمة',
+        imageEmoji: '🏯',
+        imageKeyword: 'Sanaa',
+        imageGradient: 'from-amber-900 via-orange-950 to-slate-950'
+      }
+    ]
+  },
+  euro_capitals: {
+    title: '🏰 عواصم الدول الأوروبية (بلا غلط!)',
+    badge: 'عواصم أوروبا',
+    category: '🌍 عالم وتحديات',
+    questions: [
+      {
+        q: 'بزاف كيصحاب ليهم "جنيف" أو "زيورخ" هي العاصمة، ولكن شنو هي العاصمة الفيدرالية الفعلية ديال سويسرا؟',
+        options: ['بيرن (Bern)', 'زيورخ (Zurich)', 'جنيف (Geneva)', 'بازل (Basel)'],
+        a: 0,
+        wikiTitle: 'Bern',
+        imageUrl: '',
+        imageCaption: 'المدينة القديمة الساحرة فـ العاصمة السويسرية',
+        imageEmoji: '🇨🇭',
+        imageKeyword: 'Bern',
+        imageGradient: 'from-red-950 via-stone-900 to-slate-950'
+      },
+      {
+        q: 'شنو هي العاصمة ديال سلوفاكيا (Slovakia) اللي هي العاصمة الوحيدة فـ العالم اللي كتشترك فـ الحدود مع جوج دول (النمسا وهنغاريا)؟',
+        options: ['براتيسلافا (Bratislava)', 'ليوبليانا (Ljubljana)', 'زغرب (Zagreb)', 'براغ (Prague)'],
+        a: 0,
+        wikiTitle: 'Bratislava',
+        imageUrl: '',
+        imageCaption: 'قلعة العاصمة السلوفاكية على نهر الدانوب',
+        imageEmoji: '🏰',
+        imageKeyword: 'Bratislava',
+        imageGradient: 'from-indigo-950 via-blue-950 to-slate-950'
+      },
+      {
+        q: 'شنو هي العاصمة ديال دولة إستونيا (Estonia) اللي مطلة على بحر البلطيق ومعروفة بأسوار القرون الوسطى؟',
+        options: ['تالين (Tallinn)', 'ريغا (Riga)', 'فيلنيوس (Vilnius)', 'هلسنكي (Helsinki)'],
+        a: 0,
+        wikiTitle: 'Tallinn',
+        imageUrl: '',
+        imageCaption: 'أسوار وأبراج العاصمة الإستونية التاريخية',
+        imageEmoji: '🇪🇪',
+        imageKeyword: 'Tallinn',
+        imageGradient: 'from-sky-950 via-slate-900 to-indigo-950'
+      },
+      {
+        q: 'شنو هي العاصمة ديال هنغاريا (المجر) اللي مقسومة لنصين بنهر الدانوب (بودا + بيست)؟',
+        options: ['بودابست (Budapest)', 'بوخارست (Bucharest)', 'بلغراد (Belgrade)', 'صوفيا (Sofia)'],
+        a: 0,
+        wikiTitle: 'Budapest',
+        imageUrl: '',
+        imageCaption: 'مبنى البرلمان الشهير على ضفاف الدانوب فـ المجر',
+        imageEmoji: '🏛️',
+        imageKeyword: 'Budapest',
+        imageGradient: 'from-amber-950 via-red-950 to-slate-950'
+      },
+      {
+        q: 'شنو هي العاصمة ديال إيرلندا (Republic of Ireland)؟',
+        options: ['دبلن (Dublin)', 'بلفاست (Belfast)', 'إدنبرة (Edinburgh)', 'كارديف (Cardiff)'],
+        a: 0,
+        wikiTitle: 'Dublin',
+        imageUrl: '',
+        imageCaption: 'نهر ليفي وجسور العاصمة الإيرلندية',
+        imageEmoji: '🇮🇪',
+        imageKeyword: 'Dublin',
         imageGradient: 'from-emerald-950 via-green-900 to-slate-950'
+      },
+      {
+        q: 'شنو هي أصغر عاصمة فـ الاتحاد الأوروبي من حيث المساحة واللي هي عاصمة جزيرة مالطا (Malta)؟',
+        options: ['فاليتا (Valletta)', 'نيقوسيا (Nicosia)', 'لوكسمبورغ', 'موناكو'],
+        a: 0,
+        wikiTitle: 'Valletta',
+        imageUrl: '',
+        imageCaption: 'القلعة الذهبية ديال عاصمة مالطا فـ البحر المتوسط',
+        imageEmoji: '🇲🇹',
+        imageKeyword: 'Valletta',
+        imageGradient: 'from-amber-900 via-orange-950 to-slate-950'
+      },
+      {
+        q: 'شنو هي العاصمة ديال النرويج (Norway) اللي كتسلم فيها كل عام جائزة نوبل للسلام؟',
+        options: ['أوسلو (Oslo)', 'ستوكهولم (Stockholm)', 'كوبنهاغن (Copenhagen)', 'ريكيافيك (Reykjavik)'],
+        a: 0,
+        wikiTitle: 'Oslo',
+        imageUrl: '',
+        imageCaption: 'دار الأوبرا الشهيرة فـ العاصمة النرويجية',
+        imageEmoji: '🇳🇴',
+        imageKeyword: 'Oslo',
+        imageGradient: 'from-blue-950 via-rose-950 to-slate-950'
+      },
+      {
+        q: 'شنو هي العاصمة ديال كرواتيا (Croatia)؟',
+        options: ['زغرب (Zagreb)', 'دوبروفنيك (Dubrovnik)', 'سبليت (Split)', 'سراييفو (Sarajevo)'],
+        a: 0,
+        wikiTitle: 'Zagreb',
+        imageUrl: '',
+        imageCaption: 'ساحة وكاتدرائية العاصمة الكرواتية',
+        imageEmoji: '🇭🇷',
+        imageKeyword: 'Zagreb',
+        imageGradient: 'from-red-950 via-blue-950 to-slate-950'
+      }
+    ]
+  },
+  fastfood: {
+    title: '🍔 ماركات الـ Fast Food والمطاعم فـ المغرب',
+    badge: 'Fast Food',
+    category: '🇲🇦 تراث ومغربيات',
+    questions: [
+      {
+        q: 'فأشمن عام تفتح أول مطعم ديال McDonald’s فـ المغرب وفـ إفريقيا والعالم العربي كامل، وفين جا بالضبط؟',
+        options: ['سنة 1992 فـ كورنيش عين الذئاب بالدار البيضاء', 'سنة 1998 فـ شارع محمد الخامس بالرباط', 'سنة 2001 فـ جيليز بمراكش', 'سنة 1988 فـ طنجة'],
+        a: 0,
+        wikiTitle: "McDonald's",
+        imageUrl: '',
+        imageCaption: 'أول ماكدونالدز فـ المغرب على كورنيش عين الذئاب بكازا (1992)',
+        imageEmoji: '🍟',
+        imageKeyword: "McDonald's",
+        imageGradient: 'from-red-950 via-amber-900 to-slate-950'
+      },
+      {
+        q: 'شكون هو الرجل العجوز المرسوم فـ اللوغو ديال مطاعم الدجاج المقلي KFC، وشنو هي قصة الـ 11 عشبة؟',
+        options: ['الكولونيل هارلاند ساندرز (Colonel Sanders) صاحب الخلطة السرية ديال 11 عشبة وتابل', 'الشيف غوردون رامزي', 'المستر دونالد ماكدونالد', 'الكابتن جاك دانييل'],
+        a: 0,
+        wikiTitle: 'KFC',
+        imageUrl: '',
+        imageCaption: 'الكولونيل ساندرز — مؤسس سلسلة KFC',
+        imageEmoji: '🍗',
+        imageKeyword: 'KFC',
+        imageGradient: 'from-red-900 via-rose-950 to-slate-950'
+      },
+      {
+        q: 'فـ المغرب، أشمن سلسلة مطاعم مشهورة بـ "التاكوس الفرنسي" (French Tacos) والصلصة الفرماجية (Sauce Fromagère) منتشرة فـ كاع المدن الكبرى؟',
+        options: ['O’Tacos', 'Taco Bell', 'Chipotle', 'Wendy’s'],
+        a: 0,
+        wikiTitle: 'French_tacos',
+        imageUrl: '',
+        imageCaption: 'التاكوس الفرنسي المحمر مع صلصة الفرماج (French Tacos)',
+        imageEmoji: '🌯',
+        imageKeyword: 'French tacos',
+        imageGradient: 'from-orange-950 via-amber-900 to-slate-950'
+      },
+      {
+        q: 'شنو سميت البرغر الأشهر والأكبر عند سلسلة "Burger King" فالمغرب والعالم واللي كيطيب فوق العافية (Flame-Grilled)؟',
+        options: ['The Whopper (الوابر)', 'Big Mac', 'Big Tasty', 'Zinger Tower'],
+        a: 0,
+        wikiTitle: 'Whopper',
+        imageUrl: '',
+        imageCaption: 'برغر الـ Whopper المشوي على اللهب من Burger King',
+        imageEmoji: '🍔',
+        imageKeyword: 'Whopper',
+        imageGradient: 'from-amber-950 via-orange-900 to-slate-950'
+      },
+      {
+        q: 'فـ سلسلة مطاعم "Pizza Hut" فالمغرب، شنو سميت العجينة الغليظة والمقرمشة بالزيت اللي كطيب فـ مقلة غارقة وشهرت بيها بيتزا هات؟',
+        options: ['Pan Pizza (عجينة البان)', 'Thin & Crispy', 'Neapolitan Crust', 'Calzone'],
+        a: 0,
+        wikiTitle: 'Pizza_Hut',
+        imageUrl: '',
+        imageCaption: 'بيتزا Pan السميكة والشهيرة ديال Pizza Hut',
+        imageEmoji: '🍕',
+        imageKeyword: 'Pizza Hut',
+        imageGradient: 'from-red-950 via-orange-950 to-slate-950'
+      },
+      {
+        q: 'أشمن براند عالمية ديال القهوة اللي الشعار الأخضر ديالها فيه "حورية البحر بجوج ذيول" (Twin-Tailed Siren) وعندها فروع فـ المولات المغربية؟',
+        options: ['Starbucks', 'Costa Coffee', 'Tim Hortons', 'Paul'],
+        a: 0,
+        wikiTitle: 'Starbucks',
+        imageUrl: '',
+        imageCaption: 'شعار حورية البحر الخضراء ديال Starbucks',
+        imageEmoji: '☕',
+        imageKeyword: 'Starbucks',
+        imageGradient: 'from-emerald-950 via-green-900 to-slate-950'
+      },
+      {
+        q: 'فـ McDonald’s المغرب، كتخرج مرة فـ العام (خصوصاً فـ رمضان أو الصيف) وجبة خاصة مستوحاة من الطبخ المغربي بـ خبيز بلدي، شنو كتسمى غالباً؟',
+        options: ['McArabia أو McBled / البرغر الشرقي', 'McTajine', 'McCouscous', 'McPastilla'],
+        a: 0,
+        wikiTitle: 'McArabia',
+        imageUrl: '',
+        imageCaption: 'ساندويتش McArabia الشهير فـ ماكدونالدز المغرب والعالم العربي',
+        imageEmoji: '🥙',
+        imageKeyword: 'McArabia',
+        imageGradient: 'from-amber-900 via-red-950 to-slate-950'
+      },
+      {
+        q: 'أشمن سلسلة مطاعم ساندويتشات عالمية معروفة بأنك نتا لي كتختار نوع الخبز (15 سم أو 30 سم Footlong) والخضرة والصوص قدام عينيك؟',
+        options: ['Subway', 'Domino’s Pizza', 'Popeyes', 'Quick'],
+        a: 0,
+        wikiTitle: 'Subway_(restaurant)',
+        imageUrl: '',
+        imageCaption: 'ساندويتشات الـ Sub الطويلة ديال Subway',
+        imageEmoji: '🥖',
+        imageKeyword: 'Subway restaurant',
+        imageGradient: 'from-emerald-900 via-yellow-950 to-slate-950'
+      }
+    ]
+  },
+  biscuits: {
+    title: '🍪 البيسكوي والسقاطة القدام د المغرب (جيل الطيبين)',
+    badge: 'سقاطة زمان',
+    category: '🇲🇦 تراث ومغربيات',
+    questions: [
+      {
+        q: 'شنو سميت الكيكة المغربية الأسطورية ديال شركة BIMO لي مكسية بالشكلاط وفيها خط متموج الفوق وكنا كنشريوها بـ درهم ولا جوج دراهم؟',
+        options: ['Merendina (ميريندينا)', 'Genova (جينوفا)', 'Tonik (طونيك)', 'Tagger (تاغر)'],
+        a: 0,
+        wikiTitle: 'Snack_cake',
+        imageUrl: '',
+        imageCaption: 'معشوقة الطفولة المغربية — ميريندينا (Merendina) بالشكلاط',
+        imageEmoji: '🍫',
+        imageKeyword: 'Chocolate cake',
+        imageGradient: 'from-amber-950 via-stone-900 to-slate-950'
+      },
+      {
+        q: 'أشمن بيسكوي مغربي قديم مستطيل ومشرط كان كيتباع فـ غلاف أصفر وأحمر، ولا غمستيه فـ أتاي سخون أكثر من جوج ثواني كيذوب ويطيح فـ الكاس؟',
+        options: ['Henry’s (هنريس)', 'Oreo', 'Golden', 'Bimo Sablé'],
+        a: 0,
+        wikiTitle: 'Marie_biscuit',
+        imageUrl: '',
+        imageCaption: 'بيسكوي هنريس (Henry’s) الأصفر مع كاس أتاي مشحر',
+        imageEmoji: '🍪',
+        imageKeyword: 'Biscuit',
+        imageGradient: 'from-yellow-900 via-amber-950 to-slate-950'
+      },
+      {
+        q: 'مع ميريندينا ولا طونيك، شنو هو المشروب الوردي الخاتر بالرمان ديال شركة Centrale اللي تربى عليه الشعب المغربي كامل فـ المدرسة؟',
+        options: ['Raïbi Jamila (رايبي جميلة)', 'DanUp', 'عصير Miami', 'Poms'],
+        a: 0,
+        wikiTitle: 'Drinkable_yogurt',
+        imageUrl: '',
+        imageCaption: 'الحك الوردي الأسطوري ديال رايبي جميلة (Raïbi Jamila)',
+        imageEmoji: '🍧',
+        imageKeyword: 'Strawberry milk',
+        imageGradient: 'from-pink-900 via-rose-950 to-slate-950'
+      },
+      {
+        q: 'شنو سميت الگوفريط (Gaufrette) المغربية القديمة اللي كان الغلاف ديالها أحمر أو أزرق ومقرمشة بزاف وكان تمنها 10 ريال (نص درهم)؟',
+        options: ['Tonik (طونيك) أو Tagger (تاغر)', 'KitKat', 'Twix', 'Bounty'],
+        a: 0,
+        wikiTitle: 'Wafer',
+        imageUrl: '',
+        imageCaption: 'گوفريط Tonik و Tagger ديال زمان بـ 10 ريال',
+        imageEmoji: '🧇',
+        imageKeyword: 'Wafer',
+        imageGradient: 'from-red-950 via-indigo-950 to-slate-950'
+      },
+      {
+        q: 'أشمن بيسكوي مغربي ديال زمان كان داير بحال الساندويتش مدور ولا مربع بالكريمة البيضاء وسطو ومعروف بسمية إيطالية؟',
+        options: ['Rialto (ريالطو)', 'Sablé Coco', 'Momo', 'petit beurre'],
+        a: 0,
+        wikiTitle: 'Sandwich_cookie',
+        imageUrl: '',
+        imageCaption: 'بيسكوي Rialto المحشو بالكريمة ديال شركة BIMO',
+        imageEmoji: '🍘',
+        imageKeyword: 'Sandwich cookie',
+        imageGradient: 'from-amber-900 via-orange-950 to-slate-950'
+      },
+      {
+        q: 'فـ الصغر عند مول الحانوت، شنو سميت المسكة (Chewing-gum) اللي كان وسطها وشم كيتلصق بالماء على اليد ولا تصاور الكرة بـ درهم ولا زوج ريال؟',
+        options: ['مسكة Bubbaloo أو Malabar أو Flash', 'Clorets', 'Mentos', 'Tic Tac'],
+        a: 0,
+        wikiTitle: 'Bubble_gum',
+        imageUrl: '',
+        imageCaption: 'مسكة الطفولة بـ الوشم المائي والنفخات الكبار',
+        imageEmoji: '🫧',
+        imageKeyword: 'Bubble gum',
+        imageGradient: 'from-fuchsia-950 via-pink-900 to-slate-950'
+      },
+      {
+        q: 'شنو سميت ديك الحلوى ولا الغبرة الحامضة اللي كانت فـ خنيشة صغيرة ومعاها مصاصة على شكل رجل ولا يد كنغمسوها فيها وكتطرطق فـ الفم؟',
+        options: ['حلوى الرجل الطرطاقة (Pop Rocks / Dip Dab)', 'المارشميلو', 'عرق السوس', 'النبگ'],
+        a: 0,
+        wikiTitle: 'Pop_Rocks',
+        imageUrl: '',
+        imageCaption: 'الحلوى اللي كتطرطق فـ الفم ديال سقاطة التسعينات والألفينات',
+        imageEmoji: '💥',
+        imageKeyword: 'Candy',
+        imageGradient: 'from-purple-950 via-rose-900 to-slate-950'
+      },
+      {
+        q: 'شنو سميت الجينواز (الكيكة الرطبة) اللي كانت وسطها الكونفيتير ديال الفريز ولا المشماش ومغطية بالشكلاط من برا؟',
+        options: ['Genova (جينوفا)', 'طونيك', 'صالي (Salé)', 'كرواصة'],
+        a: 0,
+        wikiTitle: 'Jaffa_Cakes',
+        imageUrl: '',
+        imageCaption: 'كيكة جينوفا (Genova) المحشوة بالمربى والشكلاط',
+        imageEmoji: '🍓',
+        imageKeyword: 'Sponge cake',
+        imageGradient: 'from-rose-950 via-amber-950 to-slate-950'
+      }
+    ]
+  },
+  movies: {
+    title: '🎬 أفلام ومسلسلات مغربية خالدة',
+    badge: 'السينما المغربية',
+    category: '🇲🇦 تراث ومغربيات',
+    questions: [
+      {
+        q: 'فـ الفيلم المغربي الأسطوري "كازانيكرا" (Casanegra - 2008) ديال نور الدين الخماري، شنو كانو السميات ديال البطلين اللي لعبو دورهم أنس الباز وعمر لطفي؟',
+        options: ['عاديل وكريم (Adil & Karim)', 'علي وكويكا', 'سعيد وحميد', 'الزريرق وبنعيسى'],
+        a: 0,
+        wikiTitle: 'Casanegra_(film)',
+        imageUrl: '',
+        imageCaption: 'الفيلم المغربي الشهير Casanegra (2008)',
+        imageEmoji: '🎬',
+        imageKeyword: 'Casablanca',
+        imageGradient: 'from-slate-900 via-zinc-900 to-indigo-950'
+      },
+      {
+        q: 'شكون هو الممثل المغربي القدير اللي لعب دور "الماجدوب" أو "بوغابة" ولا "الحاج عيبود" فـ سلسلة "لالا فاطمة" و"وجع التراب"؟',
+        options: ['محمد بنبراهيم أو محمد بسطاوي رحمهما الله', 'رشيد الوالي', 'عزيز الحطاب', 'ربيع القاطي'],
+        a: 0,
+        wikiTitle: 'Cinema_of_Morocco',
+        imageUrl: '',
+        imageCaption: 'عمالقة الدراما والسينما المغربية الأصيلة',
+        imageEmoji: '🎭',
+        imageKeyword: 'Moroccan cinema',
+        imageGradient: 'from-amber-950 via-stone-900 to-slate-950'
+      },
+      {
+        q: 'فـ المسلسل التراثي الشهير "حديدان"، شكون هو الممثل اللي جسد شخصية "حديدان" الحيلي والذكي اللي ديما كيغلب القاضي ودواير الزمان؟',
+        options: ['كمال كاظيمي', 'محمد خيي', 'طارق البخاري', 'عزيز داداس'],
+        a: 0,
+        wikiTitle: 'Moroccan_television',
+        imageUrl: '',
+        imageCaption: 'شخصية حديدان التراثية الشهيرة فـ التلفزة المغربية',
+        imageEmoji: '👳‍♂️',
+        imageKeyword: 'Marrakesh',
+        imageGradient: 'from-orange-950 via-amber-900 to-slate-950'
+      },
+      {
+        q: 'فـ الفيلم المغربي الكوميدي الشهير "الطريق إلى كابول" (Road to Kabul - 2012)، شنو هي المدينة اللي كانو باغين يمشيو ليها الصحاب الأربعة حرّاكة ولقاو راسهم فـ أفغانستان؟',
+        options: ['كانو باغين يمشيو لـ أمستردام (هولندا) ولقاو راسهم فـ كابول', 'كانو باغين يمشيو لـ باريس', 'كانو باغين يمشيو لـ نيويورك', 'كانو باغين يمشيو لـ طوكيو'],
+        a: 0,
+        wikiTitle: 'Road_to_Kabul',
+        imageUrl: '',
+        imageCaption: 'الفيلم الكوميدي المغربي "الطريق إلى كابول" (أعلى إيرادات فـ القاعات)',
+        imageEmoji: '✈️',
+        imageKeyword: 'Kabul',
+        imageGradient: 'from-amber-900 via-red-950 to-slate-950'
+      },
+      {
+        q: 'شنو سميت الفيلم المغربي ديال نبيل عيوش (2000) اللي كيحكي قصة أطفال الشوارع فـ الدار البيضاء وكان البطل ديالو هو "علي زاوا"؟',
+        options: ['علي زاوا: أمير الشارع (Ali Zaoua)', 'يا خيل الله', 'غزية', 'الزين اللي فيك'],
+        a: 0,
+        wikiTitle: 'Ali_Zaoua',
+        imageUrl: '',
+        imageCaption: 'فيلم "علي زاوا" الحائز على جوائز عالمية كبيرة',
+        imageEmoji: '⛵',
+        imageKeyword: 'Ali Zaoua',
+        imageGradient: 'from-sky-950 via-blue-950 to-slate-950'
+      },
+      {
+        q: 'فـ الفيلم التلفزيوني الكوميدي الشهير "البرتقالة المرة" اللي بكّى المغاربة كاملين، شكون هي الممثلة اللي لعبت دور "سعدية" مع يوسف الجندي؟',
+        options: ['هدى الريحاني', 'السعدية لاديب', 'سامية أقريو', 'نورا الصقلي'],
+        a: 0,
+        wikiTitle: 'Bitter_Orange',
+        imageUrl: '',
+        imageCaption: 'الفيلم المغربي الشهير "البرتقالة المرة" (هدى الريحاني ويوسف الجندي)',
+        imageEmoji: '🍊',
+        imageKeyword: 'Orange fruit',
+        imageGradient: 'from-orange-900 via-rose-950 to-slate-950'
+      },
+      {
+        q: 'فـ السيتكوم الرمضاني الخالد "لكوبل" (L’Couple)، شنو كانو سميات الشخصيتين اللي لعبوهم حسن الفد ودنيا بوطازوت؟',
+        options: ['كبور والشعيبية', 'الحبيب وزهرة', 'عزيزة وبوجمعة', 'رحيمو وعلال'],
+        a: 0,
+        wikiTitle: 'Hassan_El_Fad',
+        imageUrl: '',
+        imageCaption: 'الثنائي الكوميدي الأسطوري كبور والشعيبية (L’Couple)',
+        imageEmoji: '😂',
+        imageKeyword: 'Comedy',
+        imageGradient: 'from-emerald-950 via-amber-950 to-slate-950'
+      },
+      {
+        q: 'شكون هو الممثل المغربي الفكاهي اللي بطل فيلم "فيها الملحة والسكر وما بغاتش تموت" وفيلم "عمي" و"البوز"؟',
+        options: ['عبد الإله عاجل أو عزيز داداس / رشيد الوالي', 'سعيد الناصري', 'عبد الله فركوس', 'محمد الجم'],
+        a: 0,
+        wikiTitle: 'Moroccan_cinema',
+        imageUrl: '',
+        imageCaption: 'كلاسيكيات الكوميديا والسينما المغربية',
+        imageEmoji: '🎥',
+        imageKeyword: 'Film projector',
+        imageGradient: 'from-indigo-950 via-purple-950 to-slate-950'
       }
     ]
   }
@@ -882,20 +1551,34 @@ function extractRoomCodeFromInput(rawInput) {
 }
 
 const PACK_CODE_MAP = {
-  morocco: 'M',
-  football: 'F',
+  makla: 'M',
+  cars: 'C',
   general: 'G',
-  gaming: 'A'
+  rap: 'R',
+  makeup: 'K',
+  players: 'P',
+  arab_capitals: 'A',
+  euro_capitals: 'E',
+  fastfood: 'F',
+  biscuits: 'B',
+  movies: 'V'
 };
 
 const CODE_TO_PACK_MAP = {
-  M: 'morocco',
-  F: 'football',
+  M: 'makla',
+  C: 'cars',
   G: 'general',
-  A: 'gaming'
+  R: 'rap',
+  K: 'makeup',
+  P: 'players',
+  A: 'arab_capitals',
+  E: 'euro_capitals',
+  F: 'fastfood',
+  B: 'biscuits',
+  V: 'movies'
 };
 
-function generateSmartRoomCode(packKey = 'morocco', settings = {}) {
+function generateSmartRoomCode(packKey = 'makla', settings = {}) {
   const pChar = PACK_CODE_MAP[packKey] || 'M';
   const durCode =
     settings.roundDurationSec === 8
@@ -916,7 +1599,7 @@ function generateSmartRoomCode(packKey = 'morocco', settings = {}) {
 
 function decodeSmartRoomCode(code) {
   const clean = (code || '').trim().toUpperCase();
-  const packKey = CODE_TO_PACK_MAP[clean.charAt(0)] || 'morocco';
+  const packKey = CODE_TO_PACK_MAP[clean.charAt(0)] || 'makla';
   const durChar = clean.charAt(1);
   const roundDurationSec =
     durChar === '1' ? 8 : durChar === '3' ? 20 : durChar === '4' ? 30 : 12;
@@ -1013,7 +1696,8 @@ function QuizArenaInstance({
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedDirectUrl, setCopiedDirectUrl] = useState(false);
 
-  const [selectedPack, setSelectedPack] = useState('morocco');
+  const [selectedPack, setSelectedPack] = useState('makla');
+  const [packCategoryFilter, setPackCategoryFilter] = useState('ALL');
   const [aiTopic, setAiTopic] = useState('');
   const [aiDifficulty, setAiDifficulty] = useState('Medium');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
@@ -1470,7 +2154,7 @@ function QuizArenaInstance({
       }
 
       const decoded = decodeSmartRoomCode(extractedCode);
-      const packObj = CURATED_PACKS[decoded.packKey] || CURATED_PACKS.morocco;
+      const packObj = CURATED_PACKS[decoded.packKey] || CURATED_PACKS.makla;
       const syncedQuestions = packObj.questions.slice(
         0,
         decoded.settings.questionCount || 8
@@ -2545,6 +3229,7 @@ function QuizArenaInstance({
                   </div>
                 </div>
 
+                {}
                 {/* OpenAI API Key Input Field */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-950/90 border border-white/15 rounded-xl px-3 py-2">
                   <div className="flex items-center gap-2 flex-1">
@@ -2557,25 +3242,21 @@ function QuizArenaInstance({
                       className="w-full bg-transparent text-xs font-mono text-emerald-200 focus:outline-none"
                     />
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-                      className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-slate-300 flex items-center gap-1 cursor-pointer"
-                    >
-                      {showApiKeyInput ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      <span>{showApiKeyInput ? 'إخفاء' : 'إظهار'}</span>
-                    </button>
-                    <span
-                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                        openAiKey.trim().startsWith('sk-')
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                          : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                      }`}
-                    >
-                      {openAiKey.trim().startsWith('sk-') ? '✓ Key Ready' : 'Key Required'}
-                    </span>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKeyInput(!showApiKeyInput)}
+                    className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-slate-300 flex items-center gap-1 shrink-0 cursor-pointer"
+                  >
+                    {showApiKeyInput ? (
+                      <>
+                        <EyeOff className="w-3.5 h-3.5" /> إخفاء
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="w-3.5 h-3.5" /> إظهار المفتاح
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -2587,51 +3268,99 @@ function QuizArenaInstance({
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleGenerateCustomQuiz();
                     }}
-                    placeholder="كتب أي موضوع: المنتخب المغربي، الطبخ المغربي، الأنمي، ريال مدريد..."
-                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white focus:outline-none focus:border-emerald-500"
+                    placeholder="كتب أي موضوع آخر بغيتي ChatGPT يصاوب ليك عليه كويز بالدارجة..."
+                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-xs sm:text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
                   />
                   <button
-                    onClick={handleGenerateCustomQuiz}
+                    type="button"
                     disabled={isGeneratingAI}
-                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-50 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-lg transition cursor-pointer shrink-0"
+                    onClick={handleGenerateCustomQuiz}
+                    className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg transition cursor-pointer shrink-0"
                   >
                     <Sparkles className="w-4 h-4" />
-                    {isGeneratingAI ? 'ChatGPT كيصاوب الأسئلة...' : 'صاوب كويز بـ ChatGPT'}
+                    {isGeneratingAI ? 'كيصاوب الكويز...' : 'صاوب كويز بـ ChatGPT ✨'}
                   </button>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  أو اختار باقة جاهزة بالدارجة المغربية (كل سؤال بصورته 📸)
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {[
-                    ['morocco', CURATED_PACKS.morocco],
-                    ['football', CURATED_PACKS.football],
-                    ['general', CURATED_PACKS.general],
-                    ['gaming', CURATED_PACKS.gaming]
-                  ].map(([key, pack]) => {
-                    const active = sessionData.quizTitle === pack.title;
-                    return (
+              {/* GEMINI HANDCRAFTED 11 CREATIVE DARIJA QUIZ PACKS HUB */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-950/90 via-slate-900 to-fuchsia-950/80 border-2 border-indigo-500/50 space-y-3.5 shadow-xl" dir="rtl">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[11px] font-black mb-1">
+                      ✨ 11 كويز حصري من إبداع Gemini · ترفيه وتحدي بالدارجة
+                    </span>
+                    <h3 className="text-sm sm:text-base font-black text-white">
+                      🎯 اختار الكويز اللي بغيتي تلعب نتا وصاحبك (أسئلة ذكية وما ساهلاش بزاف!):
+                    </h3>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    {[
+                      { id: 'ALL', label: 'الكل (11)' },
+                      { id: '🇲🇦 تراث ومغربيات', label: '🇲🇦 مغربيات (6)' },
+                      { id: '🌍 عالم وتحديات', label: '🌍 عالم وتحديات (5)' }
+                    ].map((tab) => (
                       <button
-                        key={key}
-                        onClick={() => handleSelectPack(key)}
-                        className={`p-3 rounded-xl border text-left transition flex items-center justify-between cursor-pointer ${
-                          active
-                            ? 'bg-indigo-600/25 border-indigo-400 text-white'
-                            : 'bg-slate-950/60 border-white/10 text-slate-300 hover:border-white/25'
+                        key={tab.id}
+                        type="button"
+                        onClick={() => {
+                          sfx.click();
+                          setPackCategoryFilter(tab.id);
+                        }}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-extrabold border transition cursor-pointer ${
+                          packCategoryFilter === tab.id
+                            ? 'bg-indigo-600 text-white border-indigo-300 shadow-md'
+                            : 'bg-slate-950/80 text-slate-300 border-white/10 hover:border-indigo-400/40'
                         }`}
                       >
-                        <span className="font-bold text-xs truncate pr-2" dir="rtl">
-                          {pack.title}
-                        </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-300 font-semibold shrink-0">
-                          {pack.badge}
-                        </span>
+                        {tab.label}
                       </button>
-                    );
-                  })}
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {Object.entries(CURATED_PACKS)
+                    .filter(
+                      ([, pack]) =>
+                        packCategoryFilter === 'ALL' || pack.category === packCategoryFilter
+                    )
+                    .map(([key, pack], idx) => {
+                      const active = sessionData.quizTitle === pack.title;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => handleSelectPack(key)}
+                          className={`p-3.5 rounded-2xl border-2 text-right transition flex items-center justify-between gap-2 cursor-pointer ${
+                            active
+                              ? 'bg-gradient-to-l from-indigo-600/40 to-fuchsia-600/30 border-amber-400 text-white shadow-lg shadow-indigo-500/20 scale-[1.01]'
+                              : 'bg-slate-950/80 border-white/10 text-slate-200 hover:border-indigo-400/60 hover:bg-slate-900'
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <div className="font-extrabold text-xs sm:text-sm truncate">
+                              {idx + 1}. {pack.title}
+                            </div>
+                            <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-2">
+                              <span>📸 {pack.questions.length} أسئلة بالصور</span>
+                              <span>·</span>
+                              <span className="text-amber-300 font-bold">🔥 تحدي ممتع</span>
+                            </div>
+                          </div>
+                          <span
+                            className={`text-[10px] px-2.5 py-1 rounded-xl font-extrabold shrink-0 ${
+                              active
+                                ? 'bg-amber-400 text-slate-950'
+                                : 'bg-white/10 text-indigo-200'
+                            }`}
+                          >
+                            {active ? '✓ مختار' : pack.badge}
+                          </span>
+                        </button>
+                      );
+                    })}
                 </div>
               </div>
 
