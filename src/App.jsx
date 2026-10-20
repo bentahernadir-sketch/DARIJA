@@ -1411,21 +1411,21 @@ function QuestionPictureBanner({ question, roundNumber }) {
 }
 
 // ============================================================================
-// CHATGPT (OPENAI API) QUIZ GENERATOR IN MOROCCAN DARIJA + WIKIPEDIA PHOTOS
+// GEMINI (gemini-3.5-flash-lite) QUIZ GENERATOR IN MOROCCAN DARIJA + WIKIPEDIA PHOTOS
 // ============================================================================
-async function generateAIQuizWithChatGPT(
+async function generateAIQuizWithGemini(
   topic,
   difficulty = 'Medium',
   count = 8,
-  openAiKey = '',
-  modelName = 'gpt-4o-mini'
+  geminiApiKey = ''
 ) {
-  const cleanKey = (openAiKey || '').trim();
+  const cleanKey = (geminiApiKey || '').trim();
   if (!cleanKey) {
-    throw new Error('MISSING_OPENAI_KEY');
+    throw new Error('MISSING_GEMINI_KEY');
   }
 
-  const apiUrl = 'https://api.openai.com/v1/chat/completions';
+  const modelName = 'gemini-3.5-flash-lite';
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(cleanKey)}`;
 
   const systemPrompt = `You are an expert Moroccan trivia host creating a fast-paced 1v1 competitive quiz in authentic Moroccan Darija (الدارجة المغربية).
 Write all questions ("q") and all 4 multiple-choice options ("options") in clear, natural Moroccan Darija using Arabic script.
@@ -1443,20 +1443,49 @@ Return ONLY a valid JSON object with a single root key "questions" containing an
   const userQuery = `صاوب ليا كويز تنافسي فيه ${count} ديال الأسئلة بالدارجة المغربية على موضوع: "${topic}" بمستوى صعوبة "${difficulty}". اختار أسئلة عندها صور حقيقية معروفة فـ Wikipedia وعطيني wikiTitle دقيق بالإنجليزية لكل سؤال فـ JSON تحت المفتاح "questions".`;
 
   const payload = {
-    model: modelName || 'gpt-4o-mini',
-    response_format: { type: 'json_object' },
-    temperature: 0.7,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userQuery }
-    ]
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: userQuery }]
+      }
+    ],
+    systemInstruction: {
+      parts: [{ text: systemPrompt }]
+    },
+    generationConfig: {
+      temperature: 0.7,
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: 'OBJECT',
+        properties: {
+          questions: {
+            type: 'ARRAY',
+            items: {
+              type: 'OBJECT',
+              properties: {
+                q: { type: 'STRING' },
+                options: {
+                  type: 'ARRAY',
+                  items: { type: 'STRING' }
+                },
+                a: { type: ' INTEGER'.trim() },
+                wikiTitle: { type: 'STRING' },
+                imageCaption: { type: 'STRING' },
+                imageEmoji: { type: 'STRING' }
+              },
+              required: ['q', 'options', 'a', 'wikiTitle', 'imageCaption', 'imageEmoji']
+            }
+          }
+        },
+        required: ['questions']
+      }
+    }
   };
 
   const res = await fetch(apiUrl, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${cleanKey}`
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify(payload)
   });
@@ -1471,12 +1500,13 @@ Return ONLY a valid JSON object with a single root key "questions" containing an
   }
 
   const data = await res.json();
-  const contentText = data?.choices?.[0]?.message?.content;
+  const contentText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!contentText) {
-    throw new Error('Empty response from ChatGPT API');
+    throw new Error('Empty response from Gemini API');
   }
 
-  const parsedObj = JSON.parse(contentText);
+  const cleanedJson = contentText.replace(/```json|```/g, '').trim();
+  const parsedObj = JSON.parse(cleanedJson);
   const rawList = Array.isArray(parsedObj)
     ? parsedObj
     : Array.isArray(parsedObj.questions)
@@ -1484,7 +1514,7 @@ Return ONLY a valid JSON object with a single root key "questions" containing an
     : [];
 
   if (rawList.length === 0) {
-    throw new Error('Invalid questions format returned by ChatGPT');
+    throw new Error('Invalid questions format returned by Gemini');
   }
 
   const enriched = await Promise.all(
@@ -1664,10 +1694,8 @@ function QuizArenaInstance({
   publicShareUrl = '',
   setPublicShareUrl = () => {},
   onOpenShareModal = () => {},
-  openAiKey = '',
-  setOpenAiKey = () => {},
-  openAiModel = 'gpt-4o-mini',
-  setOpenAiModel = () => {}
+  geminiApiKey = '',
+  setGeminiApiKey = () => {}
 }) {
   const [playerName, setPlayerName] = useState(defaultName);
   const [playerAvatar, setPlayerAvatar] = useState(() =>
@@ -1723,7 +1751,7 @@ function QuizArenaInstance({
   const lastSeenTauntRef = useRef(0);
   const sessionDataRef = useRef(null);
   const lastSyncTimestampRef = useRef(0);
-  const [netStatus] = useState('متصل وجاهز للعب المباشر 1v1 ⚡ (ChatGPT AI + Vercel Ready)');
+  const [netStatus] = useState('متصل وجاهز للعب المباشر 1v1 ⚡ (gemini-3.5-flash-lite + Vercel Ready)');
 
   useEffect(() => {
     sessionDataRef.current = sessionData;
@@ -2292,10 +2320,10 @@ function QuizArenaInstance({
       return;
     }
 
-    if (!openAiKey || !openAiKey.trim()) {
+    if (!geminiApiKey || !geminiApiKey.trim()) {
       setStatusBanner({
         type: 'error',
-        msg: '🔑 عافاك حط الـ ChatGPT (OpenAI) API Key ديالك (sk-...) فـ الخانة ديال المفتاح عاد كليكي صاوب الكويز!'
+        msg: '🔑 عافاك حط الـ Gemini API Key ديالك (AIzaSy...) فـ الخانة ديال المفتاح عاد كليكي صاوب الكويز!'
       });
       return;
     }
@@ -2305,16 +2333,15 @@ function QuizArenaInstance({
     setIsGeneratingAI(true);
     setStatusBanner({
       type: 'info',
-      msg: `🤖 ChatGPT (${openAiModel}) كيوجد ليك ${qCount} ديال الأسئلة بالدارجة مع الصور على "${topic}"...`
+      msg: `🤖 موديل gemini-3.5-flash-lite كيوجد ليك ${qCount} ديال الأسئلة بالدارجة مع الصور على "${topic}"...`
     });
 
     try {
-      const generated = await generateAIQuizWithChatGPT(
+      const generated = await generateAIQuizWithGemini(
         topic,
         aiDifficulty,
         qCount,
-        openAiKey,
-        openAiModel
+        geminiApiKey
       );
       const customTitle = `🤖 ${topic} بالدارجة (${aiDifficulty})`;
 
@@ -2329,13 +2356,13 @@ function QuizArenaInstance({
 
       setStatusBanner({
         type: 'success',
-        msg: `✅ واجد بـ ChatGPT! الكويز "${customTitle}" بالدارجة وبالصور جاهز للعب ومزامن مع صاحبك!`
+        msg: `✅ واجد بـ gemini-3.5-flash-lite! الكويز "${customTitle}" بالدارجة وبالصور جاهز للعب ومزامن مع صاحبك!`
       });
       sfx.lockIn();
     } catch (err) {
       setStatusBanner({
         type: 'error',
-        msg: `❌ خطأ من OpenAI API: ${err.message || 'تأكد بلي الـ API Key ديالك (sk-...) صحيحة وفيها رصيد'}`
+        msg: `❌ خطأ من Gemini API (gemini-3.5-flash-lite): ${err.message || 'تأكد بلي الـ Gemini API Key ديالك صحيحة'}`
       });
     } finally {
       setIsGeneratingAI(false);
@@ -3197,21 +3224,16 @@ function QuizArenaInstance({
                 </div>
               </div>
 
-              {/* CHATGPT (OPENAI API) CUSTOM QUIZ GENERATOR BOX */}
+              {/* GEMINI (gemini-3.5-flash-lite) CUSTOM QUIZ GENERATOR BOX */}
               <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-teal-950/60 border border-emerald-500/40 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <label className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-300">
-                    <Sparkles className="w-4 h-4 text-emerald-400" /> 🤖 صاوب كويز بالدارجة والصور بـ ChatGPT (OpenAI API)
+                    <Sparkles className="w-4 h-4 text-emerald-400" /> 🤖 صاوب كويز بالدارجة والصور بـ Gemini (`gemini-3.5-flash-lite`)
                   </label>
                   <div className="flex items-center gap-1.5">
-                    <select
-                      value={openAiModel}
-                      onChange={(e) => setOpenAiModel(e.target.value)}
-                      className="px-2 py-0.5 rounded-lg bg-slate-950 border border-emerald-500/30 text-[11px] font-bold text-emerald-300 focus:outline-none"
-                    >
-                      <option value="gpt-4o-mini">gpt-4o-mini (سريع ⚡)</option>
-                      <option value="gpt-4o">gpt-4o (ذكي بزاف 🧠)</option>
-                    </select>
+                    <span className="px-2.5 py-0.5 rounded-lg bg-slate-950 border border-emerald-500/40 text-[11px] font-mono font-bold text-emerald-300">
+                      ⚡ gemini-3.5-flash-lite
+                    </span>
                     {['Easy', 'Medium', 'Hard'].map((diff) => (
                       <button
                         key={diff}
@@ -3229,16 +3251,15 @@ function QuizArenaInstance({
                   </div>
                 </div>
 
-                {}
-                {/* OpenAI API Key Input Field */}
+                {/* Gemini API Key Input Field */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-950/90 border border-white/15 rounded-xl px-3 py-2">
                   <div className="flex items-center gap-2 flex-1">
                     <KeyRound className="w-4 h-4 text-emerald-400 shrink-0" />
                     <input
                       type={showApiKeyInput ? 'text' : 'password'}
-                      value={openAiKey}
-                      onChange={(e) => setOpenAiKey(e.target.value)}
-                      placeholder="حط الـ OpenAI API Key ديالك هنا (sk-proj-...)"
+                      value={geminiApiKey}
+                      onChange={(e) => setGeminiApiKey(e.target.value)}
+                      placeholder="حط الـ Gemini API Key ديالك هنا (AIzaSy...)"
                       className="w-full bg-transparent text-xs font-mono text-emerald-200 focus:outline-none"
                     />
                   </div>
@@ -3268,7 +3289,7 @@ function QuizArenaInstance({
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleGenerateCustomQuiz();
                     }}
-                    placeholder="كتب أي موضوع آخر بغيتي ChatGPT يصاوب ليك عليه كويز بالدارجة..."
+                    placeholder="كتب أي موضوع بغيتي gemini-3.5-flash-lite يصاوب ليك عليه كويز بالدارجة..."
                     className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-xs sm:text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
                   />
                   <button
@@ -3278,7 +3299,7 @@ function QuizArenaInstance({
                     className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg transition cursor-pointer shrink-0"
                   >
                     <Sparkles className="w-4 h-4" />
-                    {isGeneratingAI ? 'كيصاوب الكويز...' : 'صاوب كويز بـ ChatGPT ✨'}
+                    {isGeneratingAI ? 'كيصاوب الكويز...' : 'صاوب كويز بـ Gemini 3.5 Flash Lite ✨'}
                   </button>
                 </div>
               </div>
@@ -3675,16 +3696,15 @@ export default function App() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [publicShareUrl, setPublicShareUrl] = useState('');
 
-  // OpenAI API Key state (supports Vercel VITE_OPENAI_API_KEY or manual input in UI)
-  const [openAiKey, setOpenAiKey] = useState(() => {
+  // Gemini API Key state (supports Vercel VITE_GEMINI_API_KEY or manual input in UI)
+  const [geminiApiKey, setGeminiApiKey] = useState(() => {
     try {
-      if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_OPENAI_API_KEY) {
-        return import.meta.env.VITE_OPENAI_API_KEY;
+      if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) {
+        return import.meta.env.VITE_GEMINI_API_KEY;
       }
     } catch (e) {}
     return '';
   });
-  const [openAiModel, setOpenAiModel] = useState('gpt-4o-mini');
 
   const [splitPlayer2User] = useState(() => ({
     uid: 'p2-split-' + Math.random().toString(36).substring(2, 9)
@@ -3717,7 +3737,7 @@ export default function App() {
                 QuizBlitz Arena
               </span>
               <span className="hidden sm:inline-block ml-2 text-[11px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
-                v4 · ChatGPT (OpenAI) + Darija Edition
+                v4 · gemini-3.5-flash-lite + Darija Edition
               </span>
             </div>
           </div>
@@ -3731,7 +3751,7 @@ export default function App() {
               className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-lg shadow-emerald-500/25 transition cursor-pointer"
             >
               <Share2 className="w-3.5 h-3.5" />
-              🚀 Vercel + OpenAI Key Setup
+              🚀 Vercel + Gemini Key Setup
             </button>
 
             <button
@@ -3775,10 +3795,10 @@ export default function App() {
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-white">
-                    🤖 ChatGPT API Key & Vercel Deployment
+                    🤖 Gemini API Key (`gemini-3.5-flash-lite`) & Vercel
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Enter your OpenAI API key below or configure `VITE_OPENAI_API_KEY` on Vercel
+                    Enter your Gemini API key below or configure `VITE_GEMINI_API_KEY` on Vercel
                   </p>
                 </div>
               </div>
@@ -3792,18 +3812,18 @@ export default function App() {
 
             <div className="p-4 rounded-2xl bg-emerald-950/50 border border-emerald-500/40 space-y-2.5">
               <label className="text-xs font-extrabold text-emerald-300 flex items-center justify-between">
-                <span>🔑 Your ChatGPT / OpenAI API Key (`sk-...`)</span>
-                <span className="text-[11px] text-slate-400">Used directly with api.openai.com</span>
+                <span>🔑 Your Gemini API Key (`AIzaSy...`)</span>
+                <span className="text-[11px] font-mono text-emerald-400">Model: gemini-3.5-flash-lite</span>
               </label>
               <input
                 type="password"
-                value={openAiKey}
-                onChange={(e) => setOpenAiKey(e.target.value)}
-                placeholder="sk-proj-..."
+                value={geminiApiKey}
+                onChange={(e) => setGeminiApiKey(e.target.value)}
+                placeholder="AIzaSy..."
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-xs font-mono text-emerald-200 focus:outline-none focus:border-emerald-400"
               />
               <p className="text-[11px] text-slate-300 leading-relaxed">
-                💡 On <strong>Vercel</strong>, you can also add an Environment Variable named <code>VITE_OPENAI_API_KEY</code> with your key so you never have to type it manually!
+                💡 On <strong>Vercel</strong>, you can also add an Environment Variable named <code>VITE_GEMINI_API_KEY</code> with your key so you never have to type it manually!
               </p>
             </div>
 
@@ -3861,10 +3881,8 @@ export default function App() {
                 publicShareUrl={publicShareUrl}
                 setPublicShareUrl={setPublicShareUrl}
                 onOpenShareModal={() => setShowShareModal(true)}
-                openAiKey={openAiKey}
-                setOpenAiKey={setOpenAiKey}
-                openAiModel={openAiModel}
-                setOpenAiModel={setOpenAiModel}
+                geminiApiKey={geminiApiKey}
+                setGeminiApiKey={setGeminiApiKey}
               />
             </div>
 
@@ -3881,10 +3899,8 @@ export default function App() {
                 publicShareUrl={publicShareUrl}
                 setPublicShareUrl={setPublicShareUrl}
                 onOpenShareModal={() => setShowShareModal(true)}
-                openAiKey={openAiKey}
-                setOpenAiKey={setOpenAiKey}
-                openAiModel={openAiModel}
-                setOpenAiModel={setOpenAiModel}
+                geminiApiKey={geminiApiKey}
+                setGeminiApiKey={setGeminiApiKey}
               />
             </div>
           </div>
@@ -3899,17 +3915,15 @@ export default function App() {
               publicShareUrl={publicShareUrl}
               setPublicShareUrl={setPublicShareUrl}
               onOpenShareModal={() => setShowShareModal(true)}
-              openAiKey={openAiKey}
-              setOpenAiKey={setOpenAiKey}
-              openAiModel={openAiModel}
-              setOpenAiModel={setOpenAiModel}
+              geminiApiKey={geminiApiKey}
+              setGeminiApiKey={setGeminiApiKey}
             />
           </div>
         )}
       </main>
 
       <footer className="relative z-10 border-t border-white/10 bg-slate-950/80 py-3 px-4 text-center text-xs text-slate-400">
-        QuizBlitz Arena v4 · 🇲🇦 Moroccan Darija Edition · Powered by ChatGPT (OpenAI API)
+        QuizBlitz Arena v4 · 🇲🇦 Moroccan Darija Edition · Powered by Gemini (`gemini-3.5-flash-lite`)
       </footer>
     </div>
   );
