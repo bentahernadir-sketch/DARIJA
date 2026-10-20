@@ -45,7 +45,7 @@ const DARIJA_NICKNAME_PRESETS = [
   'العلامة 🧠'
 ];
 
-// Global + Local Room Store & Real-Time MQTT/BroadcastChannel Sync (Works across devices on Vercel!)
+// Global room store & BroadcastChannel / MQTT sync
 const inMemoryRooms = {};
 const roomSubscribers = new Set();
 let mqttClientInstance = null;
@@ -61,11 +61,9 @@ function notifyRoomSubscribers() {
   });
 }
 
-// Initialize Global WebSocket MQTT Broker when running on Vercel or outside restricted sandboxes
 function initGlobalMultiplayerSync(onRoomUpdate) {
   if (typeof window === 'undefined') return;
 
-  // 1. BroadcastChannel for instant multi-tab sync
   try {
     const bc = new BroadcastChannel('quizblitz_global_sync_v4');
     bc.onmessage = (ev) => {
@@ -78,7 +76,6 @@ function initGlobalMultiplayerSync(onRoomUpdate) {
     window.__qbBroadcast = bc;
   } catch (e) {}
 
-  // 2. Dynamic MQTT over WebSockets for real-time cross-device sync on Vercel
   if (!window.mqtt && !document.getElementById('mqtt-cdn-script')) {
     const script = document.createElement('script');
     script.id = 'mqtt-cdn-script';
@@ -123,7 +120,6 @@ function connectMqttBroker(onRoomUpdate) {
   } catch (e) {}
 }
 
-// Seeded deterministic pseudo-random generator
 function seededRandom(seedStr) {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < seedStr.length; i++) {
@@ -281,7 +277,7 @@ const CURATED_PACKS = {
         imageCaption: 'زلافة الشوربة والحريرة المغربية السخونة',
         imageEmoji: '🥣',
         imageKeyword: 'Harira',
-        imageGradient: 'from-red-950 via-orange-900 to-slate-900'
+        imageGradient: 'from-red-950 via-orange-900 to-slate-950'
       },
       {
         q: 'شنو هي "الخميرة البلدية" اللي كانو جدودنا كيعجنو بيها الخبز المغربي وكيفاش كانت كتربّى فـ الأول؟',
@@ -292,7 +288,7 @@ const CURATED_PACKS = {
         imageCaption: 'الخبز البلدي المغربي بالخميرة البلدية الصحية',
         imageEmoji: '🍞',
         imageKeyword: 'Moroccan bread',
-        imageGradient: 'from-stone-900 via-amber-950 to-slate-900'
+        imageGradient: 'from-stone-900 via-amber-950 to-slate-950'
       }
     ]
   },
@@ -1410,11 +1406,9 @@ function QuestionPictureBanner({ question, roundNumber }) {
   );
 }
 
-// ============================================================================
-// GEMINI (gemini-3.5-flash-lite) QUIZ GENERATOR IN MOROCCAN DARIJA + WIKIPEDIA PHOTOS
-// ============================================================================
 async function generateAIQuizWithGemini(
   topic,
+  selectedModel = 'gemini-3.8-flash',
   difficulty = 'Medium',
   count = 8,
   geminiApiKey = ''
@@ -1424,11 +1418,11 @@ async function generateAIQuizWithGemini(
     throw new Error('MISSING_GEMINI_KEY');
   }
 
-  const modelName = 'gemini-3.5-flash-lite';
+  const modelName = selectedModel || 'gemini-3.8-flash';
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(cleanKey)}`;
 
   const systemPrompt = `You are an expert Moroccan trivia host creating a fast-paced 1v1 competitive quiz in authentic Moroccan Darija (الدارجة المغربية).
-Write all questions ("q") and all 4 multiple-choice options ("options") in clear, natural Moroccan Darija using Arabic script.
+Write all questions ("q") and all 4 multiple-choice options ("options") in clear, natural Moroccan Darija using Arabic script. Make them creative, engaging, and challenging (not too easy).
 CRITICAL FOR ACCURATE PHOTOS:
 For EVERY question, you MUST provide "wikiTitle": the exact English Wikipedia article title of the visual subject of the question (for example: "Chefchaouen", "Yassine_Bounou", "Tajine", "Hassan_II_Mosque", "Lionel_Messi", "Eiffel_Tower", "Mars", "Naruto").
 Choose questions about famous people, places, monuments, animals, foods, movies, anime, or objects that definitely have a real photograph on English Wikipedia!
@@ -1440,7 +1434,7 @@ Return ONLY a valid JSON object with a single root key "questions" containing an
 - "imageCaption": short caption in Moroccan Darija describing the visual subject without spoiling the answer
 - "imageEmoji": single relevant emoji`;
 
-  const userQuery = `صاوب ليا كويز تنافسي فيه ${count} ديال الأسئلة بالدارجة المغربية على موضوع: "${topic}" بمستوى صعوبة "${difficulty}". اختار أسئلة عندها صور حقيقية معروفة فـ Wikipedia وعطيني wikiTitle دقيق بالإنجليزية لكل سؤال فـ JSON تحت المفتاح "questions".`;
+  const userQuery = `صاوب ليا كويز تنافسي إبداعي فيه ${count} ديال الأسئلة بالدارجة المغربية وما ساهلاش بزاف على موضوع: "${topic}" بمستوى صعوبة "${difficulty}". اختار أسئلة عندها صور حقيقية معروفة فـ Wikipedia وعطيني wikiTitle دقيق بالإنجليزية لكل سؤال فـ JSON تحت المفتاح "questions".`;
 
   const payload = {
     contents: [
@@ -1468,7 +1462,7 @@ Return ONLY a valid JSON object with a single root key "questions" containing an
                   type: 'ARRAY',
                   items: { type: 'STRING' }
                 },
-                a: { type: ' INTEGER'.trim() },
+                a: { type: 'INTEGER' },
                 wikiTitle: { type: 'STRING' },
                 imageCaption: { type: 'STRING' },
                 imageEmoji: { type: 'STRING' }
@@ -1655,14 +1649,12 @@ async function saveRoomToGlobalCloud(code, stateObj) {
   inMemoryRooms[code] = stateObj;
   notifyRoomSubscribers();
 
-  // Broadcast across browser tabs
   try {
     if (window.__qbBroadcast) {
       window.__qbBroadcast.postMessage(stateObj);
     }
   } catch (e) {}
 
-  // Broadcast to global MQTT broker for cross-device online play on Vercel
   try {
     if (mqttClientInstance && mqttClientInstance.connected) {
       mqttClientInstance.publish(
@@ -1695,7 +1687,9 @@ function QuizArenaInstance({
   setPublicShareUrl = () => {},
   onOpenShareModal = () => {},
   geminiApiKey = '',
-  setGeminiApiKey = () => {}
+  setGeminiApiKey = () => {},
+  selectedGeminiModel = 'gemini-3.8-flash',
+  setSelectedGeminiModel = () => {}
 }) {
   const [playerName, setPlayerName] = useState(defaultName);
   const [playerAvatar, setPlayerAvatar] = useState(() =>
@@ -1751,7 +1745,7 @@ function QuizArenaInstance({
   const lastSeenTauntRef = useRef(0);
   const sessionDataRef = useRef(null);
   const lastSyncTimestampRef = useRef(0);
-  const [netStatus] = useState('متصل وجاهز للعب المباشر 1v1 ⚡ (gemini-3.5-flash-lite + Vercel Ready)');
+  const [netStatus] = useState('متصل وجاهز للعب المباشر 1v1 ⚡ (Gemini 3.8 Flash + Vercel Ready)');
 
   useEffect(() => {
     sessionDataRef.current = sessionData;
@@ -1813,7 +1807,6 @@ function QuizArenaInstance({
     }
   }, [externalJoinRoomCode, authReady]);
 
-  // Subscribe to room updates for Split-Screen & Global MQTT
   useEffect(() => {
     if (!roomCode) return;
     const handleMemoryUpdate = () => {
@@ -2333,17 +2326,18 @@ function QuizArenaInstance({
     setIsGeneratingAI(true);
     setStatusBanner({
       type: 'info',
-      msg: `🤖 موديل gemini-3.5-flash-lite كيوجد ليك ${qCount} ديال الأسئلة بالدارجة مع الصور على "${topic}"...`
+      msg: `🤖 موديل ${selectedGeminiModel} كيوجد ليك ${qCount} ديال الأسئلة بالدارجة مع الصور على "${topic}"...`
     });
 
     try {
       const generated = await generateAIQuizWithGemini(
         topic,
+        selectedGeminiModel,
         aiDifficulty,
         qCount,
         geminiApiKey
       );
-      const customTitle = `🤖 ${topic} بالدارجة (${aiDifficulty})`;
+      const customTitle = `🤖 ${topic} بالدارجة (${aiDifficulty} · ${selectedGeminiModel})`;
 
       if (sessionDataRef.current) {
         const nextState = {
@@ -2356,13 +2350,13 @@ function QuizArenaInstance({
 
       setStatusBanner({
         type: 'success',
-        msg: `✅ واجد بـ gemini-3.5-flash-lite! الكويز "${customTitle}" بالدارجة وبالصور جاهز للعب ومزامن مع صاحبك!`
+        msg: `✅ واجد بـ ${selectedGeminiModel}! الكويز "${customTitle}" بالدارجة وبالصور جاهز للعب ومزامن مع صاحبك!`
       });
       sfx.lockIn();
     } catch (err) {
       setStatusBanner({
         type: 'error',
-        msg: `❌ خطأ من Gemini API (gemini-3.5-flash-lite): ${err.message || 'تأكد بلي الـ Gemini API Key ديالك صحيحة'}`
+        msg: `❌ خطأ من Gemini API (${selectedGeminiModel}): ${err.message || 'تأكد بلي الـ Gemini API Key ديالك صحيحة'}`
       });
     } finally {
       setIsGeneratingAI(false);
@@ -3224,16 +3218,25 @@ function QuizArenaInstance({
                 </div>
               </div>
 
-              {/* GEMINI (gemini-3.5-flash-lite) CUSTOM QUIZ GENERATOR BOX */}
+              {/* GEMINI AI MODEL SELECTOR + CUSTOM QUIZ GENERATOR BOX */}
               <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-teal-950/60 border border-emerald-500/40 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <label className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-300">
-                    <Sparkles className="w-4 h-4 text-emerald-400" /> 🤖 صاوب كويز بالدارجة والصور بـ Gemini (`gemini-3.5-flash-lite`)
+                    <Sparkles className="w-4 h-4 text-emerald-400" /> 🤖 صاوب كويز بالدارجة والصور بـ Gemini AI
                   </label>
                   <div className="flex items-center gap-1.5">
-                    <span className="px-2.5 py-0.5 rounded-lg bg-slate-950 border border-emerald-500/40 text-[11px] font-mono font-bold text-emerald-300">
-                      ⚡ gemini-3.5-flash-lite
-                    </span>
+                    {/* Model selector dropdown */}
+                    <select
+                      value={selectedGeminiModel}
+                      onChange={(e) => setSelectedGeminiModel(e.target.value)}
+                      className="px-2.5 py-1 rounded-lg bg-slate-950 border border-emerald-500/40 text-[11px] font-mono font-bold text-emerald-300 focus:outline-none"
+                    >
+                      <option value="gemini-3.8-flash">⚡ Gemini 3.8 Flash (الأذكى والأحدث)</option>
+                      <option value="gemini-3.7-flash">✨ Gemini 3.7 Flash</option>
+                      <option value="gemini-3.6-flash">🚀 Gemini 3.6 Flash</option>
+                      <option value="gemini-3.5-flash-lite">💨 Gemini 3.5 Flash-Lite (الأسرع)</option>
+                    </select>
+
                     {['Easy', 'Medium', 'Hard'].map((diff) => (
                       <button
                         key={diff}
@@ -3289,7 +3292,7 @@ function QuizArenaInstance({
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleGenerateCustomQuiz();
                     }}
-                    placeholder="كتب أي موضوع بغيتي gemini-3.5-flash-lite يصاوب ليك عليه كويز بالدارجة..."
+                    placeholder={`كتب أي موضوع بغيتي ${selectedGeminiModel} يصاوب ليك عليه كويز بالدارجة...`}
                     className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-xs sm:text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
                   />
                   <button
@@ -3299,20 +3302,20 @@ function QuizArenaInstance({
                     className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg transition cursor-pointer shrink-0"
                   >
                     <Sparkles className="w-4 h-4" />
-                    {isGeneratingAI ? 'كيصاوب الكويز...' : 'صاوب كويز بـ Gemini 3.5 Flash Lite ✨'}
+                    {isGeneratingAI ? 'كيصاوب الكويز...' : `صاوب كويز بـ ${selectedGeminiModel} ✨`}
                   </button>
                 </div>
               </div>
 
-              {/* GEMINI HANDCRAFTED 11 CREATIVE DARIJA QUIZ PACKS HUB */}
+              {/* 11 HANDCRAFTED DARIJA QUIZ PACKS HUB */}
               <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-950/90 via-slate-900 to-fuchsia-950/80 border-2 border-indigo-500/50 space-y-3.5 shadow-xl" dir="rtl">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[11px] font-black mb-1">
-                      ✨ 11 كويز حصري من إبداع Gemini · ترفيه وتحدي بالدارجة
+                      ✨ 11 كويز حصري احترافي · ترفيه وتحدي بالدارجة
                     </span>
                     <h3 className="text-sm sm:text-base font-black text-white">
-                      🎯 اختار الكويز اللي بغيتي تلعب نتا وصاحبك (أسئلة ذكية وما ساهلاش بزاف!):
+                      🎯 اختار الكويز اللي بغيتي تلعب نتا وصاحبك (أسئلة ذكية وممتعة!):
                     </h3>
                   </div>
 
@@ -3696,7 +3699,6 @@ export default function App() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [publicShareUrl, setPublicShareUrl] = useState('');
 
-  // Gemini API Key state (supports Vercel VITE_GEMINI_API_KEY or manual input in UI)
   const [geminiApiKey, setGeminiApiKey] = useState(() => {
     try {
       if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) {
@@ -3705,6 +3707,8 @@ export default function App() {
     } catch (e) {}
     return '';
   });
+
+  const [selectedGeminiModel, setSelectedGeminiModel] = useState('gemini-3.8-flash');
 
   const [splitPlayer2User] = useState(() => ({
     uid: 'p2-split-' + Math.random().toString(36).substring(2, 9)
@@ -3737,7 +3741,7 @@ export default function App() {
                 QuizBlitz Arena
               </span>
               <span className="hidden sm:inline-block ml-2 text-[11px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
-                v4 · gemini-3.5-flash-lite + Darija Edition
+                v4 · Gemini 3.8 Flash + Darija Edition
               </span>
             </div>
           </div>
@@ -3795,7 +3799,7 @@ export default function App() {
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-white">
-                    🤖 Gemini API Key (`gemini-3.5-flash-lite`) & Vercel
+                    🤖 Gemini API Key (`gemini-3.8-flash`) & Vercel
                   </h3>
                   <p className="text-xs text-slate-400">
                     Enter your Gemini API key below or configure `VITE_GEMINI_API_KEY` on Vercel
@@ -3813,7 +3817,7 @@ export default function App() {
             <div className="p-4 rounded-2xl bg-emerald-950/50 border border-emerald-500/40 space-y-2.5">
               <label className="text-xs font-extrabold text-emerald-300 flex items-center justify-between">
                 <span>🔑 Your Gemini API Key (`AIzaSy...`)</span>
-                <span className="text-[11px] font-mono text-emerald-400">Model: gemini-3.5-flash-lite</span>
+                <span className="text-[11px] font-mono text-emerald-400">Model: {selectedGeminiModel}</span>
               </label>
               <input
                 type="password"
@@ -3883,6 +3887,8 @@ export default function App() {
                 onOpenShareModal={() => setShowShareModal(true)}
                 geminiApiKey={geminiApiKey}
                 setGeminiApiKey={setGeminiApiKey}
+                selectedGeminiModel={selectedGeminiModel}
+                setSelectedGeminiModel={setSelectedGeminiModel}
               />
             </div>
 
@@ -3901,6 +3907,8 @@ export default function App() {
                 onOpenShareModal={() => setShowShareModal(true)}
                 geminiApiKey={geminiApiKey}
                 setGeminiApiKey={setGeminiApiKey}
+                selectedGeminiModel={selectedGeminiModel}
+                setSelectedGeminiModel={setSelectedGeminiModel}
               />
             </div>
           </div>
@@ -3917,13 +3925,15 @@ export default function App() {
               onOpenShareModal={() => setShowShareModal(true)}
               geminiApiKey={geminiApiKey}
               setGeminiApiKey={setGeminiApiKey}
+              selectedGeminiModel={selectedGeminiModel}
+              setSelectedGeminiModel={setSelectedGeminiModel}
             />
           </div>
         )}
       </main>
 
       <footer className="relative z-10 border-t border-white/10 bg-slate-950/80 py-3 px-4 text-center text-xs text-slate-400">
-        QuizBlitz Arena v4 · 🇲🇦 Moroccan Darija Edition · Powered by Gemini (`gemini-3.5-flash-lite`)
+        QuizBlitz Arena v4 · 🇲🇦 Moroccan Darija Edition · Powered by Gemini ({selectedGeminiModel})
       </footer>
     </div>
   );
