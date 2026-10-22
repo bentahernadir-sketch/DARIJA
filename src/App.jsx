@@ -29,7 +29,8 @@ import {
   Image as ImageIcon,
   KeyRound,
   Eye,
-  EyeOff
+  EyeOff,
+  Trash2
 } from 'lucide-react';
 
 const AVATAR_OPTIONS = ['🦁', '🦅', '⚡', '👑', '🔥', '🇲🇦', '⚽', '🎮', '🧠', '🥷', '🚀', '💎'];
@@ -67,6 +68,16 @@ function initGlobalMultiplayerSync(onRoomUpdate) {
   try {
     const bc = new BroadcastChannel('quizblitz_global_sync_v4');
     bc.onmessage = (ev) => {
+      if (ev.data && ev.data.type === 'DELETE_ROOM' && ev.data.roomCode) {
+        delete inMemoryRooms[ev.data.roomCode];
+        notifyRoomSubscribers();
+        return;
+      }
+      if (ev.data && ev.data.type === 'CLEAR_ALL_ROOMS') {
+        Object.keys(inMemoryRooms).forEach((k) => delete inMemoryRooms[k]);
+        notifyRoomSubscribers();
+        return;
+      }
       if (ev.data && ev.data.roomCode) {
         inMemoryRooms[ev.data.roomCode] = ev.data;
         notifyRoomSubscribers();
@@ -104,7 +115,25 @@ function connectMqttBroker(onRoomUpdate) {
 
     client.on('message', (topic, message) => {
       try {
-        const data = JSON.parse(message.toString());
+        const rawStr = message ? message.toString().trim() : '';
+        const topicParts = topic.split('/');
+        const roomCodeFromTopic = topicParts[topicParts.length - 1];
+
+        if (!rawStr) {
+          if (roomCodeFromTopic && inMemoryRooms[roomCodeFromTopic]) {
+            delete inMemoryRooms[roomCodeFromTopic];
+            notifyRoomSubscribers();
+          }
+          return;
+        }
+
+        const data = JSON.parse(rawStr);
+        if (data && data.deleted && data.roomCode) {
+          delete inMemoryRooms[data.roomCode];
+          notifyRoomSubscribers();
+          return;
+        }
+
         if (data && data.roomCode) {
           const current = inMemoryRooms[data.roomCode];
           if (!current || (data.updatedAt && data.updatedAt >= (current.updatedAt || 0))) {
@@ -1668,6 +1697,52 @@ async function saveRoomToGlobalCloud(code, stateObj) {
   return true;
 }
 
+async function deleteRoomFromGlobalCloud(code) {
+  if (!code) return false;
+  delete inMemoryRooms[code];
+  notifyRoomSubscribers();
+
+  try {
+    if (window.__qbBroadcast) {
+      window.__qbBroadcast.postMessage({ type: 'DELETE_ROOM', roomCode: code });
+    }
+  } catch (e) {}
+
+  try {
+    if (mqttClientInstance && mqttClientInstance.connected) {
+      // Publish empty retained message to clear room from MQTT broker
+      mqttClientInstance.publish(`quizblitz_v4_global/rooms/${code}`, '', {
+        qos: 0,
+        retain: true
+      });
+    }
+  } catch (e) {}
+
+  return true;
+}
+
+async function clearAllRoomsFromGlobalCloud() {
+  const allCodes = Object.keys(inMemoryRooms);
+  allCodes.forEach((code) => {
+    delete inMemoryRooms[code];
+    try {
+      if (mqttClientInstance && mqttClientInstance.connected) {
+        mqttClientInstance.publish(`quizblitz_v4_global/rooms/${code}`, '', {
+          qos: 0,
+          retain: true
+        });
+      }
+    } catch (e) {}
+  });
+  notifyRoomSubscribers();
+
+  try {
+    if (window.__qbBroadcast) {
+      window.__qbBroadcast.postMessage({ type: 'CLEAR_ALL_ROOMS' });
+    }
+  } catch (e) {}
+}
+
 async function loadRoomFromGlobalCloud(code) {
   if (!code) return null;
   if (inMemoryRooms[code]) {
@@ -1870,16 +1945,41 @@ function QuizArenaInstance({
       }
     }
 
-    const updatedSmartCode = generateSmartRoomCode(selectedPack, updated);
-    setRoomCode(updatedSmartCode);
+    // Keep the exact same roomCode so all connected players stay in the same room!
+    const existingCode = sessionDataRef.current.roomCode || roomCode;
 
     const nextState = {
       ...sessionDataRef.current,
-      roomCode: updatedSmartCode,
+      roomCode: existingCode,
       settings: updated,
       questions: updatedQuestions
     };
     await syncRoomStateEverywhere(nextState);
+  };
+
+  const handleDeleteRoom = async (targetCode, e) => {
+    if (e) e.stopPropagation();
+    sfx.click();
+    await deleteRoomFromGlobalCloud(targetCode);
+    if (roomCode === targetCode) {
+      setView('home');
+      setRoomCode('');
+      setSessionData(null);
+      sessionDataRef.current = null;
+    }
+    setStatusBanner({
+      type: 'info',
+      msg: `🗑️ تم مسح الروم "${targetCode}" بنجاح!`
+    });
+  };
+
+  const handleClearAllOpenRooms = async () => {
+    sfx.click();
+    await clearAllRoomsFromGlobalCloud();
+    setStatusBanner({
+      type: 'info',
+      msg: '🗑️ تم مسح جميع الرومات المفتوحة بنجاح!'
+    });
   };
 
   const getEffectivePlayerName = (fallbackRole = 'لاعب') => {
@@ -2291,12 +2391,12 @@ function QuizArenaInstance({
     if (!pack || !sessionDataRef.current) return;
 
     const slicedQuestions = pack.questions.slice(0, activeSettings.questionCount || 8);
-    const newSmartCode = generateSmartRoomCode(packKey, activeSettings);
-    setRoomCode(newSmartCode);
+    // Keep the exact same roomCode so your friend stays synced in the room for the next match!
+    const existingCode = sessionDataRef.current.roomCode || roomCode;
 
     const nextState = {
       ...sessionDataRef.current,
-      roomCode: newSmartCode,
+      roomCode: existingCode,
       quizTitle: pack.title,
       questions: slicedQuestions
     };
@@ -2728,12 +2828,24 @@ function QuizArenaInstance({
               <div className="flex items-center gap-2">
                 <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
                 <span className="text-xs font-extrabold uppercase tracking-wider text-white">
-                  🔥 Live Open Lobbies — Click to Join in 1 Click
+                  🔥 Live Open Lobbies — Click to Join or Delete
                 </span>
               </div>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">
-                {sharedOpenRooms.length} Waiting
-              </span>
+              <div className="flex items-center gap-2">
+                {sharedOpenRooms.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearAllOpenRooms}
+                    className="text-[11px] px-2.5 py-0.5 rounded-full bg-rose-500/20 hover:bg-rose-500/35 border border-rose-500/40 text-rose-200 font-bold flex items-center gap-1 cursor-pointer transition"
+                    title="مسح كاع الرومات"
+                  >
+                    <Trash2 className="w-3 h-3" /> مسح الكل
+                  </button>
+                )}
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">
+                  {sharedOpenRooms.length} Waiting
+                </span>
+              </div>
             </div>
 
             {sharedOpenRooms.length === 0 ? (
@@ -2762,13 +2874,24 @@ function QuizArenaInstance({
                           🎯 {rm.quizTitle || 'General Knowledge'} · 👥 {playerCount}/2 Players
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleJoinRoom(rm.roomCode)}
-                        disabled={isBusy}
-                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-lg shadow-emerald-600/25 shrink-0 cursor-pointer transition"
-                      >
-                        Join Room →
-                      </button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteRoom(rm.roomCode, e)}
+                          title="مسح هاد الروم"
+                          className="p-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 border border-rose-500/40 text-rose-300 transition cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleJoinRoom(rm.roomCode)}
+                          disabled={isBusy}
+                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-lg shadow-emerald-600/25 shrink-0 cursor-pointer transition"
+                        >
+                          Join Room →
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -2942,6 +3065,12 @@ function QuizArenaInstance({
                   className="text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 cursor-pointer transition"
                 >
                   ✏️ بدل سميتك / الأفاتار هنا
+                </button>
+                <button
+                  onClick={(e) => handleDeleteRoom(roomCode, e)}
+                  className="text-xs font-bold px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/35 border border-rose-500/40 text-rose-200 flex items-center gap-1 cursor-pointer transition"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> مسح هاد الروم
                 </button>
                 <button
                   onClick={() => {
