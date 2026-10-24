@@ -163,6 +163,39 @@ function seededRandom(seedStr) {
   return ((h >>> 0) % 10000) / 10000;
 }
 
+// Shuffle question options deterministically (using roomCode/seed) or randomly so the correct answer is evenly distributed across A, B, C, and D
+function shuffleSingleQuestionOptions(qObj, seedKey = '') {
+  if (!qObj || !Array.isArray(qObj.options) || qObj.options.length < 2) return qObj;
+  const correctIdx = typeof qObj.a === 'number' ? qObj.a : 0;
+  const taggedOptions = qObj.options.map((text, idx) => ({
+    text,
+    isCorrect: idx === correctIdx
+  }));
+
+  for (let i = taggedOptions.length - 1; i > 0; i--) {
+    const randVal = seedKey
+      ? seededRandom(`${seedKey}-opt-${i}-${qObj.q}`)
+      : Math.random();
+    const j = Math.floor(randVal * (i + 1));
+    const temp = taggedOptions[i];
+    taggedOptions[i] = taggedOptions[j];
+    taggedOptions[j] = temp;
+  }
+
+  const newCorrectIdx = taggedOptions.findIndex((item) => item.isCorrect);
+  return {
+    ...qObj,
+    options: taggedOptions.map((item) => item.text),
+    a: newCorrectIdx >= 0 ? newCorrectIdx : 0
+  };
+}
+
+function shuffleQuestionsList(questionsArray = [], seedKey = '') {
+  return (questionsArray || []).map((q, idx) =>
+    shuffleSingleQuestionOptions(q, seedKey ? `${seedKey}-q${idx}` : '')
+  );
+}
+
 class SoundFX {
   constructor() {
     this.ctx = null;
@@ -1541,11 +1574,11 @@ Return ONLY a valid JSON object with a single root key "questions" containing an
   }
 
   const enriched = await Promise.all(
-    rawList.slice(0, count).map(async (item) => {
+    rawList.slice(0, count).map(async (item, idx) => {
       const exactPhoto = await fetchExactSubjectImageFromWikipedia(
         item.wikiTitle || topic
       );
-      return {
+      const baseQuestion = {
         q: item.q,
         options: Array.isArray(item.options)
           ? item.options.slice(0, 4)
@@ -1557,6 +1590,7 @@ Return ONLY a valid JSON object with a single root key "questions" containing an
         imageEmoji: item.imageEmoji || '✨',
         imageUrl: exactPhoto || ''
       };
+      return shuffleSingleQuestionOptions(baseQuestion, `${topic}-${Date.now()}-${idx}`);
     })
   );
 
@@ -1937,16 +1971,17 @@ function QuizArenaInstance({
 
     if (!sessionDataRef.current) return;
 
+    const existingCode = sessionDataRef.current.roomCode || roomCode;
     let updatedQuestions = sessionDataRef.current.questions;
     if (partialSettings.questionCount && CURATED_PACKS[selectedPack]) {
       const fullPack = CURATED_PACKS[selectedPack].questions;
       if (sessionDataRef.current.quizTitle === CURATED_PACKS[selectedPack].title) {
-        updatedQuestions = fullPack.slice(0, partialSettings.questionCount);
+        updatedQuestions = shuffleQuestionsList(
+          fullPack.slice(0, partialSettings.questionCount),
+          existingCode
+        );
       }
     }
-
-    // Keep the exact same roomCode so all connected players stay in the same room!
-    const existingCode = sessionDataRef.current.roomCode || roomCode;
 
     const nextState = {
       ...sessionDataRef.current,
@@ -2154,9 +2189,9 @@ function QuizArenaInstance({
     const myUid = user?.uid || 'host-' + Math.random().toString(36).substring(2, 8);
     const newCode = generateSmartRoomCode(selectedPack, quizSettings);
     const cleanName = getEffectivePlayerName('بطل');
-    const defaultQuestions = CURATED_PACKS[selectedPack].questions.slice(
-      0,
-      quizSettings.questionCount || 8
+    const defaultQuestions = shuffleQuestionsList(
+      CURATED_PACKS[selectedPack].questions.slice(0, quizSettings.questionCount || 8),
+      newCode
     );
 
     const roomDoc = {
@@ -2276,9 +2311,9 @@ function QuizArenaInstance({
 
       const decoded = decodeSmartRoomCode(extractedCode);
       const packObj = CURATED_PACKS[decoded.packKey] || CURATED_PACKS.makla;
-      const syncedQuestions = packObj.questions.slice(
-        0,
-        decoded.settings.questionCount || 8
+      const syncedQuestions = shuffleQuestionsList(
+        packObj.questions.slice(0, decoded.settings.questionCount || 8),
+        extractedCode
       );
 
       const syncedRoomDoc = {
@@ -2336,9 +2371,9 @@ function QuizArenaInstance({
     const code = customCode || generateSmartRoomCode(selectedPack, quizSettings);
     const cleanName = getEffectivePlayerName('بطل');
     if (!playerName.trim()) setPlayerName(cleanName);
-    const qList = CURATED_PACKS[selectedPack].questions.slice(
-      0,
-      quizSettings.questionCount || 8
+    const qList = shuffleQuestionsList(
+      CURATED_PACKS[selectedPack].questions.slice(0, quizSettings.questionCount || 8),
+      code
     );
 
     const botSession = {
@@ -2390,9 +2425,12 @@ function QuizArenaInstance({
     const pack = CURATED_PACKS[packKey];
     if (!pack || !sessionDataRef.current) return;
 
-    const slicedQuestions = pack.questions.slice(0, activeSettings.questionCount || 8);
     // Keep the exact same roomCode so your friend stays synced in the room for the next match!
     const existingCode = sessionDataRef.current.roomCode || roomCode;
+    const slicedQuestions = shuffleQuestionsList(
+      pack.questions.slice(0, activeSettings.questionCount || 8),
+      `${existingCode}-${packKey}`
+    );
 
     const nextState = {
       ...sessionDataRef.current,
@@ -2478,12 +2516,20 @@ function QuizArenaInstance({
     });
 
     const nextMatchId = (sessionDataRef.current.matchId || 1) + 1;
+    const existingCode = sessionDataRef.current.roomCode || roomCode;
+    // Re-shuffle answer positions on every new match so even rematches have fresh option placements!
+    const freshlyShuffledQuestions = shuffleQuestionsList(
+      sessionDataRef.current.questions || [],
+      `${existingCode}-match-${nextMatchId}`
+    );
+
     const nextState = {
       ...sessionDataRef.current,
       status: 'playing',
       currentRound: 0,
       roundStartTime: Date.now(),
       matchId: nextMatchId,
+      questions: freshlyShuffledQuestions,
       players: resetPlayers
     };
 
