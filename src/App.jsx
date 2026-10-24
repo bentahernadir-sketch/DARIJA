@@ -1470,6 +1470,7 @@ function QuestionPictureBanner({ question, roundNumber }) {
 
 async function generateAIQuizWithGemini(
   topic,
+  customPrompt = '',
   selectedModel = 'gemini-3.8-flash',
   difficulty = 'Medium',
   count = 8,
@@ -1485,6 +1486,8 @@ async function generateAIQuizWithGemini(
 
   const systemPrompt = `You are an expert Moroccan trivia host creating a fast-paced 1v1 competitive quiz in authentic Moroccan Darija (الدارجة المغربية).
 Write all questions ("q") and all 4 multiple-choice options ("options") in clear, natural Moroccan Darija using Arabic script. Make them creative, engaging, and challenging (not too easy).
+CRITICAL USER INSTRUCTIONS:
+The user has provided specific prompt instructions describing what they want in this quiz. You MUST strictly follow every detail, angle, era, style, or constraint requested in their custom prompt!
 CRITICAL FOR ACCURATE PHOTOS:
 For EVERY question, you MUST provide "wikiTitle": the exact English Wikipedia article title of the visual subject of the question (for example: "Chefchaouen", "Yassine_Bounou", "Tajine", "Hassan_II_Mosque", "Lionel_Messi", "Eiffel_Tower", "Mars", "Naruto").
 Choose questions about famous people, places, monuments, animals, foods, movies, anime, or objects that definitely have a real photograph on English Wikipedia!
@@ -1496,7 +1499,11 @@ Return ONLY a valid JSON object with a single root key "questions" containing an
 - "imageCaption": short caption in Moroccan Darija describing the visual subject without spoiling the answer
 - "imageEmoji": single relevant emoji`;
 
-  const userQuery = `صاوب ليا كويز تنافسي إبداعي فيه ${count} ديال الأسئلة بالدارجة المغربية وما ساهلاش بزاف على موضوع: "${topic}" بمستوى صعوبة "${difficulty}". اختار أسئلة عندها صور حقيقية معروفة فـ Wikipedia وعطيني wikiTitle دقيق بالإنجليزية لكل سؤال فـ JSON تحت المفتاح "questions".`;
+  const detailedInstructions = customPrompt && customPrompt.trim()
+    ? `\nتعليمات وتفاصيل إضافية مهمة بزاف من عند اللاعب (طبقها بالحرف فـ الأسئلة):\n"${customPrompt.trim()}"\n`
+    : '';
+
+  const userQuery = `صاوب ليا كويز تنافسي إبداعي فيه ${count} ديال الأسئلة بالدارجة المغربية وما ساهلاش بزاف على موضوع: "${topic}" بمستوى صعوبة "${difficulty}".${detailedInstructions} اختار أسئلة عندها صور حقيقية معروفة فـ Wikipedia وعطيني wikiTitle دقيق بالإنجليزية لكل سؤال فـ JSON تحت المفتاح "questions".`;
 
   const payload = {
     contents: [
@@ -1830,6 +1837,7 @@ function QuizArenaInstance({
   const [selectedPack, setSelectedPack] = useState('makla');
   const [packCategoryFilter, setPackCategoryFilter] = useState('ALL');
   const [aiTopic, setAiTopic] = useState('');
+  const [aiCustomPrompt, setAiCustomPrompt] = useState('');
   const [aiDifficulty, setAiDifficulty] = useState('Medium');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
@@ -2442,11 +2450,11 @@ function QuizArenaInstance({
   };
 
   const handleGenerateCustomQuiz = async () => {
-    const topic = aiTopic.trim();
-    if (!topic) {
+    const topic = aiTopic.trim() || (aiCustomPrompt.trim() ? aiCustomPrompt.trim().slice(0, 35) : '');
+    if (!topic && !aiCustomPrompt.trim()) {
       setStatusBanner({
         type: 'error',
-        msg: 'كتب أي موضوع بغيتي (مثلاً: البطولة المغربية، التاريخ، الأنمي، الأفلام)!'
+        msg: 'كتب موضوع الكويز أو كتب الـ Prompt (الوصف المفصل) ديال شنو بغيتي فـ الكويز!'
       });
       return;
     }
@@ -2464,12 +2472,13 @@ function QuizArenaInstance({
     setIsGeneratingAI(true);
     setStatusBanner({
       type: 'info',
-      msg: `🤖 موديل ${selectedGeminiModel} كيوجد ليك ${qCount} ديال الأسئلة بالدارجة مع الصور على "${topic}"...`
+      msg: `🤖 موديل ${selectedGeminiModel} كيقرا الـ Prompt ديالك وكيوجد ليك ${qCount} ديال الأسئلة بالدارجة مع الصور...`
     });
 
     try {
       const generated = await generateAIQuizWithGemini(
         topic,
+        aiCustomPrompt,
         selectedGeminiModel,
         aiDifficulty,
         qCount,
@@ -2488,7 +2497,7 @@ function QuizArenaInstance({
 
       setStatusBanner({
         type: 'success',
-        msg: `✅ واجد بـ ${selectedGeminiModel}! الكويز "${customTitle}" بالدارجة وبالصور جاهز للعب ومزامن مع صاحبك!`
+        msg: `✅ واجد بـ ${selectedGeminiModel}! الكويز "${customTitle}" تصاوب على حساب الـ Prompt ديالك بالضبط ومزامن مع صاحبك!`
       });
       sfx.lockIn();
     } catch (err) {
@@ -3464,22 +3473,73 @@ function QuizArenaInstance({
                     dir="auto"
                     value={aiTopic}
                     onChange={(e) => setAiTopic(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleGenerateCustomQuiz();
-                    }}
-                    placeholder={`كتب أي موضوع بغيتي ${selectedGeminiModel} يصاوب ليك عليه كويز بالدارجة...`}
+                    placeholder="1️⃣ عنوان أو موضوع الكويز (مثلاً: البطولة المغربية، One Piece، السيارات...)"
                     className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-xs sm:text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
                   />
-                  <button
-                    type="button"
-                    disabled={isGeneratingAI}
-                    onClick={handleGenerateCustomQuiz}
-                    className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg transition cursor-pointer shrink-0"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    {isGeneratingAI ? 'كيصاوب الكويز...' : `صاوب كويز بـ ${selectedGeminiModel} ✨`}
-                  </button>
                 </div>
+
+                {/* NEW: DETAILED CUSTOM PROMPT TEXTAREA FOR AI */}
+                <div className="space-y-2" dir="rtl">
+                  <label className="text-[11px] font-extrabold text-emerald-300 flex items-center justify-between">
+                    <span>2️⃣ كتب الـ Prompt ديالك بالتفصيل (اشرح لـ AI شنو بغيتي بالضبط فهاد الكويز):</span>
+                    <span className="text-[10px] text-slate-400 font-normal">اختياري ولكن كيخلي الكويز واعر ومفصل!</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    dir="auto"
+                    value={aiCustomPrompt}
+                    onChange={(e) => setAiCustomPrompt(e.target.value)}
+                    placeholder="مثال: بغيت الأسئلة يكونو صعاب وفيهم الفخاخ، ركز ليا غير على الديربي بين الرجاء والوداد وأحسن اللعابا فـ تاريخ البطولة، ودير اختيارات متقاربين بزاف..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/95 border border-emerald-500/30 text-xs sm:text-sm font-medium text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-400 leading-relaxed resize-y"
+                  />
+
+                  {/* Quick Prompt Templates */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] text-slate-400 font-bold">💡 أمثلة Prompts واجدة:</span>
+                    {[
+                      {
+                        label: '🔥 أسئلة صعاب وفيهم الفخاخ',
+                        text: 'بغيت الأسئلة يكونو صعاب بزاف وفيهم الفخاخ، والاختيارات الأربعة يكونو متقاربين باش ما يبانش الجواب الساهل!'
+                      },
+                      {
+                        label: '⚽ كورة ومونديال وأساطير',
+                        text: 'ركز على أرقام قياسية، هدافين تاريخيين، ولحظات ما كتنساش فـ كاس العالم والمنتخب المغربي ودوري الأبطال.'
+                      },
+                      {
+                        label: '🇲🇦 نوستالجيا وجيل الطيبين فالمغرب',
+                        text: 'دير أسئلة فيها النوستالجيا المغربية ديال التسعينات والألفينات، الإشهارات القدام، التلفزة المغربية، وذكريات الطفولة.'
+                      },
+                      {
+                        label: '🎬 تفاصيل دقيقة فـ الأفلام والأنمي',
+                        text: 'ركز على تفاصيل دقيقة، أسماء الشخصيات الثانوية، القوى الخارقة، والأحداث المفصلية اللي غير الفانز الحقيقيين غادي يعرفوها.'
+                      }
+                    ].map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          sfx.click();
+                          setAiCustomPrompt(preset.text);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-slate-950/90 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-400/50 text-[10px] font-bold text-slate-300 hover:text-emerald-200 transition cursor-pointer"
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isGeneratingAI}
+                  onClick={handleGenerateCustomQuiz}
+                  className="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {isGeneratingAI
+                    ? 'كيقرا الـ Prompt وكيصاوب الكويز...'
+                    : `صاوب الكويز دابا على حساب الـ Prompt بـ ${selectedGeminiModel} ✨`}
+                </button>
               </div>
 
               {/* 11 HANDCRAFTED DARIJA QUIZ PACKS HUB */}
